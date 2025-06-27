@@ -4007,6 +4007,101 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "todbot_stuff:Capacitive_Button"
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "SW"
+				(at 0 6.35 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Capacitive_Button"
+				(at 0 -2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "todbot_stuff:Pad-CapTouch-10mm-roundrect"
+				(at 0 -7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 -10.16 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Capacitive touch pad"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "switch lever"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "Capacitive_Button_0_0"
+				(circle
+					(center 0 3.81)
+					(radius 1.3678)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "Capacitive_Button_1_1"
+				(pin passive line
+					(at 0 0 90)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "todbot_stuff:Pico"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -5419,10 +5514,6 @@
 		(uuid "5e2bcf68-c08e-423e-9ab8-fd6ff11fdf46")
 	)
 	(no_connect
-		(at 146.05 172.72)
-		(uuid "5ea1dd08-b586-4bf1-91db-ff5742372da5")
-	)
-	(no_connect
 		(at 71.12 36.83)
 		(uuid "60f1c323-36fe-40bb-b292-62856d234c41")
 	)
@@ -5461,10 +5552,6 @@
 	(no_connect
 		(at 214.63 57.15)
 		(uuid "9652fe54-7810-43a6-a1b3-db80046a8e7d")
-	)
-	(no_connect
-		(at 146.05 175.26)
-		(uuid "a6cb0c42-0261-4c77-9f92-abbc8466d876")
 	)
 	(no_connect
 		(at 25.4 24.13)
@@ -5773,16 +5860,6 @@
 			(type default)
 		)
 		(uuid "1c65832e-8532-466c-b1c2-7a5dbc79a3e8")
-	)
-	(wire
-		(pts
-			(xy 138.43 172.72) (xy 146.05 172.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1c660f3d-5955-454a-878d-473b6ae291ac")
 	)
 	(wire
 		(pts
@@ -6273,6 +6350,16 @@
 			(type default)
 		)
 		(uuid "4dcb02a2-41a4-417f-8cec-544ae1ca9725")
+	)
+	(wire
+		(pts
+			(xy 172.72 193.04) (xy 172.72 182.88)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4e25ae0d-9428-4e6d-aed1-5c8b114fd662")
 	)
 	(wire
 		(pts
@@ -6836,7 +6923,7 @@
 	)
 	(wire
 		(pts
-			(xy 138.43 175.26) (xy 146.05 175.26)
+			(xy 138.43 175.26) (xy 154.94 175.26)
 		)
 		(stroke
 			(width 0)
@@ -7566,7 +7653,7 @@
 	)
 	(wire
 		(pts
-			(xy 138.43 177.8) (xy 171.45 177.8)
+			(xy 138.43 177.8) (xy 173.99 177.8)
 		)
 		(stroke
 			(width 0)
@@ -7603,16 +7690,6 @@
 			(type default)
 		)
 		(uuid "c5c890a6-9e1d-4262-af64-7cdb719e264d")
-	)
-	(wire
-		(pts
-			(xy 171.45 167.64) (xy 173.99 167.64)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c6506109-e846-4e27-8eeb-2f1ddc20d8ff")
 	)
 	(wire
 		(pts
@@ -7746,7 +7823,7 @@
 	)
 	(wire
 		(pts
-			(xy 138.43 182.88) (xy 173.99 182.88)
+			(xy 172.72 193.04) (xy 173.99 193.04)
 		)
 		(stroke
 			(width 0)
@@ -7873,6 +7950,16 @@
 			(type default)
 		)
 		(uuid "e73dfada-6a88-4701-b7a7-62e5cb2940d1")
+	)
+	(wire
+		(pts
+			(xy 138.43 172.72) (xy 167.64 172.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e7fb5c00-7ff1-4faa-aef9-caa85d826d85")
 	)
 	(wire
 		(pts
@@ -8016,7 +8103,7 @@
 	)
 	(wire
 		(pts
-			(xy 173.99 180.34) (xy 173.99 175.26)
+			(xy 173.99 180.34) (xy 173.99 185.42)
 		)
 		(stroke
 			(width 0)
@@ -8046,13 +8133,13 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 177.8) (xy 171.45 167.64)
+			(xy 172.72 182.88) (xy 138.43 182.88)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "f8f67ac0-b778-4efc-80f4-744ee91433ec")
+		(uuid "f80194e3-b966-496f-bcae-236f2179fa26")
 	)
 	(wire
 		(pts
@@ -12067,7 +12154,7 @@
 	)
 	(symbol
 		(lib_id "todbot_eagle2023:TouchSlider-3sectors")
-		(at 184.15 175.26 0)
+		(at 184.15 185.42 0)
 		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
@@ -12076,7 +12163,7 @@
 		(dnp no)
 		(uuid "2ce350d0-a4f9-48ed-b961-2a8b9b6421b9")
 		(property "Reference" "SLIDER1"
-			(at 187.96 176.53 0)
+			(at 187.96 186.69 0)
 			(effects
 				(font
 					(size 1.778 1.5113)
@@ -12085,7 +12172,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 179.07 162.56 0)
+			(at 179.07 172.72 0)
 			(effects
 				(font
 					(size 1.778 1.5113)
@@ -12095,7 +12182,7 @@
 			)
 		)
 		(property "Footprint" "todbot_stuff:TouchSlider3_50x8mm_ti"
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12104,7 +12191,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12113,7 +12200,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12122,7 +12209,7 @@
 			)
 		)
 		(property "Display" ""
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12131,7 +12218,7 @@
 			)
 		)
 		(property "Manufacturer" ""
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12140,7 +12227,7 @@
 			)
 		)
 		(property "Part Number" ""
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12149,7 +12236,7 @@
 			)
 		)
 		(property "Specifications" ""
-			(at 184.15 175.26 0)
+			(at 184.15 185.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12170,6 +12257,73 @@
 			(project "pico_touchytouchy_synth"
 				(path "/91d40f58-a363-48c7-98aa-eb2459062304"
 					(reference "SLIDER1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "todbot_stuff:Capacitive_Button")
+		(at 154.94 175.26 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2e5519dc-18d3-48b9-9530-903d6c8627e6")
+		(property "Reference" "TP17"
+			(at 161.29 173.9899 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Capacitive_Button"
+			(at 161.29 176.5299 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "todbot_stuff:Pad-CapTouch-8mm-roundrect"
+			(at 147.32 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 144.78 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Capacitive touch pad"
+			(at 154.94 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0791ee2d-b66d-48c0-bff4-96f82efe9767")
+		)
+		(instances
+			(project "synthiota1"
+				(path "/91d40f58-a363-48c7-98aa-eb2459062304"
+					(reference "TP17")
 					(unit 1)
 				)
 			)
@@ -16726,6 +16880,73 @@
 			(project "pico_knobby_synth"
 				(path "/91d40f58-a363-48c7-98aa-eb2459062304"
 					(reference "RV2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "todbot_stuff:Capacitive_Button")
+		(at 167.64 172.72 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "6d91297f-8257-4f2e-9a62-162998f95f13")
+		(property "Reference" "TP18"
+			(at 173.99 171.4499 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Capacitive_Button"
+			(at 173.99 173.9899 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "todbot_stuff:Pad-CapTouch-8mm-roundrect"
+			(at 160.02 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 157.48 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Capacitive touch pad"
+			(at 167.64 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6c7f5e06-045c-4760-bcb4-0b07bd9c74b8")
+		)
+		(instances
+			(project ""
+				(path "/91d40f58-a363-48c7-98aa-eb2459062304"
+					(reference "TP18")
 					(unit 1)
 				)
 			)
