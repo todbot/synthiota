@@ -14980,306 +14980,6 @@
 			)
 		)
 	)
-	(footprint "easyeda2kicad:SMD-6_L7.3-W6.5-P2.54-LS10.2-BL"
-		(layer "B.Cu")
-		(uuid "12778393-8754-415b-a499-b4d185cb0dc3")
-		(at 106.4 31 -90)
-		(property "Reference" "U1"
-			(at -5 -1 180)
-			(layer "B.SilkS")
-			(uuid "56441161-d6cd-43c7-b49e-0bea6829ecd1")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Value" "H11L1"
-			(at 0 2 90)
-			(layer "B.Fab")
-			(uuid "b5c9af01-862a-40fe-b498-07d7072856ef")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/H11L3M-D.PDF"
-			(at 0 0 90)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "403f4eb5-607f-453f-a3c0-34ee759109b5")
-			(effects
-				(font
-					(size 1.27 1.27)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Description" "Schmitt Trigger Output Optocoupler, High Speed, DIP-6, 1.6mA turn on threshold"
-			(at 0 0 90)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "37e65976-5ba7-4364-8efa-0029497c5c3b")
-			(effects
-				(font
-					(size 1.27 1.27)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "LCSC" "C78589"
-			(at 0 0 90)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "b7313ff2-915a-4f39-ba0b-04370c83345d")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Display" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "db2c585f-cddc-497d-949d-dd823a68a87c")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "LCSC Part" "C78589"
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "1bc8ce8d-180a-44ab-92d2-73c00d490969")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Manufacturer" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "7da283d4-7025-4a85-8b72-1a86525a6475")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Part Number" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "468739fb-cf3f-4224-a4c0-f9cd496a70a4")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Specifications" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "1af5b3e2-79d8-4204-96a9-591a69c4c358")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property ki_fp_filters "DIP*W7.62mm* DIP*W10.16mm* SMDIP*W9.53mm*")
-		(path "/3778ee90-de63-4046-86d0-9f49cd995800")
-		(sheetname "/")
-		(sheetfile "synthiota1.kicad_sch")
-		(attr smd)
-		(fp_line
-			(start -3.65 2.85)
-			(end 3.65 2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "c2f8d892-25aa-4492-a0b0-e0145f98352d")
-		)
-		(fp_line
-			(start 3.65 2.85)
-			(end 3.65 -2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "7d854ca2-b9f5-4060-8d0a-f1987a32ad85")
-		)
-		(fp_line
-			(start -3.65 -2.85)
-			(end -3.65 2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "cf098224-941a-44fe-ae29-5975757d0dbb")
-		)
-		(fp_line
-			(start 3.65 -2.85)
-			(end -3.65 -2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "343cea86-8d79-4942-86bc-d36525110284")
-		)
-		(fp_circle
-			(center -2.92 -2.16)
-			(end -2.72 -2.16)
-			(stroke
-				(width 0.4)
-				(type solid)
-			)
-			(fill no)
-			(layer "B.SilkS")
-			(uuid "b2b22dbb-ceea-44bb-bb62-f7c1f367edbd")
-		)
-		(fp_circle
-			(center -3.81 -4.32)
-			(end -3.66 -4.32)
-			(stroke
-				(width 0.3)
-				(type solid)
-			)
-			(fill no)
-			(layer "B.SilkS")
-			(uuid "4d1c1c3f-041d-46e2-addc-402d66f62dca")
-		)
-		(fp_circle
-			(center -2.54 -5.08)
-			(end -2.29 -5.08)
-			(stroke
-				(width 0.5)
-				(type solid)
-			)
-			(fill no)
-			(layer "Cmts.User")
-			(uuid "1e1dda71-abf6-48d2-9332-49e16cb2e1ce")
-		)
-		(fp_circle
-			(center -3.65 -5.08)
-			(end -3.62 -5.08)
-			(stroke
-				(width 0.06)
-				(type solid)
-			)
-			(fill no)
-			(layer "B.Fab")
-			(uuid "b6f536c4-c6ed-41eb-bd24-7aa8d30129a5")
-		)
-		(fp_text user "${REFERENCE}"
-			(at 0 0 90)
-			(layer "B.Fab")
-			(uuid "62b58c60-1886-4a94-968f-9807d1673d92")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(pad "1" smd rect
-			(at -2.54 -4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 9 "Net-(D1-K)")
-			(pintype "passive")
-			(uuid "cf2f3595-e6e9-4344-9243-c32192b3a628")
-		)
-		(pad "2" smd rect
-			(at 0 -4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 10 "Net-(D1-A)")
-			(pintype "passive")
-			(uuid "e8403603-144d-4d4e-b206-28cc7e209405")
-		)
-		(pad "3" smd rect
-			(at 2.54 -4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 147 "unconnected-(U1-Pad3)")
-			(pintype "no_connect")
-			(uuid "43b9a6b3-f16d-46fb-9fc0-a056ddbed910")
-		)
-		(pad "4" smd rect
-			(at 2.54 4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 12 "/MIDI_IN")
-			(pintype "output")
-			(uuid "93fd9779-664c-4ea7-92e7-30975e3ce03e")
-		)
-		(pad "5" smd rect
-			(at 0 4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 3 "GND")
-			(pintype "power_in")
-			(uuid "92a5bb50-f8a5-4314-a416-ca7f9471e891")
-		)
-		(pad "6" smd rect
-			(at -2.54 4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 1 "+3V3")
-			(pintype "power_in")
-			(uuid "4959a61c-f344-49bc-957e-a23d13a049e3")
-		)
-		(embedded_fonts no)
-		(model "${EASYEDA2KICAD}/easyeda2kicad.3dshapes/SMD-6_L7.3-W6.5-H3.6-LS10.16-P2.54.wrl"
-			(offset
-				(xyz 0 -0 -0)
-			)
-			(scale
-				(xyz 1 1 1)
-			)
-			(rotate
-				(xyz 0 0 270)
-			)
-		)
-	)
 	(footprint "Capacitor_SMD:C_0603_1608Metric"
 		(layer "B.Cu")
 		(uuid "170b6659-e0cb-456f-9dee-f125c3a316d4")
@@ -25066,6 +24766,306 @@
 			)
 		)
 	)
+	(footprint "easyeda2kicad:SMD-6_L7.3-W6.5-P2.54-LS10.2-BL"
+		(layer "B.Cu")
+		(uuid "68714780-33e7-4739-afc9-44e5a57b2152")
+		(at 106.4 31 -90)
+		(property "Reference" "U1"
+			(at 0 8.38 90)
+			(layer "B.SilkS")
+			(uuid "7f2daaa8-8cac-460e-8a9d-9df544d023bf")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Value" "H11L1"
+			(at 0 -8.38 90)
+			(layer "B.Fab")
+			(uuid "9c24f114-84f7-4120-9006-8fe44130f100")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/H11L3M-D.PDF"
+			(at 0 0 90)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "25b37512-d148-4a87-9092-86a0348f210a")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Description" "Schmitt Trigger Output Optocoupler, High Speed, DIP-6, 1.6mA turn on threshold"
+			(at 0 0 90)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "3da82c4f-5e1c-4b6c-ba30-2120e3c9e45c")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "LCSC" "C78589"
+			(at 0 0 90)
+			(unlocked yes)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "22a99044-dc81-48f7-bbba-29e5951b0446")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Display" ""
+			(at 0 0 90)
+			(unlocked yes)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "be59dae0-e77c-43cb-86e3-28ac88afcaf6")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "LCSC Part" "C78589"
+			(at 0 0 90)
+			(unlocked yes)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "32f5fdd5-aa98-4452-826a-4b5c06dbdee5")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Manufacturer" ""
+			(at 0 0 90)
+			(unlocked yes)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "51fd1bf9-ef0b-4747-a1ba-6a0a1beca7c7")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Part Number" ""
+			(at 0 0 90)
+			(unlocked yes)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "c86514e1-8c9a-48c1-ac12-59ed4c2667a5")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property "Specifications" ""
+			(at 0 0 90)
+			(unlocked yes)
+			(layer "B.Fab")
+			(hide yes)
+			(uuid "39275fa5-0eab-49e3-adca-cc8cebce8f6f")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(property ki_fp_filters "DIP*W7.62mm* DIP*W10.16mm* SMDIP*W9.53mm*")
+		(path "/3778ee90-de63-4046-86d0-9f49cd995800")
+		(sheetname "/")
+		(sheetfile "synthiota1.kicad_sch")
+		(attr smd)
+		(fp_line
+			(start -3.65 2.85)
+			(end 3.65 2.85)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(layer "B.SilkS")
+			(uuid "5e176ded-48dd-4e5f-a598-366d955546f1")
+		)
+		(fp_line
+			(start 3.65 2.85)
+			(end 3.65 -2.85)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(layer "B.SilkS")
+			(uuid "0a7e64a0-c1e8-4123-9290-2d23fe0f5e2a")
+		)
+		(fp_line
+			(start -3.65 -2.85)
+			(end -3.65 2.85)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(layer "B.SilkS")
+			(uuid "9c59e683-940d-4d0b-b1f8-70837be5f1d3")
+		)
+		(fp_line
+			(start 3.65 -2.85)
+			(end -3.65 -2.85)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(layer "B.SilkS")
+			(uuid "882e5965-b8bd-4726-9d58-8405014ec45a")
+		)
+		(fp_circle
+			(center -2.92 -2.16)
+			(end -2.72 -2.16)
+			(stroke
+				(width 0.4)
+				(type solid)
+			)
+			(fill no)
+			(layer "B.SilkS")
+			(uuid "dd0ae986-fa3e-4456-b5c5-2499c31923d3")
+		)
+		(fp_circle
+			(center -3.81 -4.32)
+			(end -3.66 -4.32)
+			(stroke
+				(width 0.3)
+				(type solid)
+			)
+			(fill no)
+			(layer "B.SilkS")
+			(uuid "38902268-fa5b-493f-adde-cae463259ce6")
+		)
+		(fp_circle
+			(center -2.54 -5.08)
+			(end -2.29 -5.08)
+			(stroke
+				(width 0.5)
+				(type solid)
+			)
+			(fill no)
+			(layer "Cmts.User")
+			(uuid "9f6b3069-30d1-4d33-bf61-506550a2685f")
+		)
+		(fp_circle
+			(center -3.65 -5.08)
+			(end -3.62 -5.08)
+			(stroke
+				(width 0.06)
+				(type solid)
+			)
+			(fill no)
+			(layer "B.Fab")
+			(uuid "089266cc-b4f8-451b-b6dc-729fd69c3656")
+		)
+		(fp_text user "${REFERENCE}"
+			(at 0 0 90)
+			(layer "B.Fab")
+			(uuid "d562fc8e-a6e1-46ca-a029-2b97a42781d9")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+				(justify mirror)
+			)
+		)
+		(pad "1" smd rect
+			(at -2.54 -4.38 270)
+			(size 1.42 2.6)
+			(layers "B.Cu" "B.Mask" "B.Paste")
+			(net 9 "Net-(D1-K)")
+			(pintype "passive")
+			(uuid "014c7c75-e94f-4834-a0a4-50deb90ab0f6")
+		)
+		(pad "2" smd rect
+			(at 0 -4.38 270)
+			(size 1.42 2.6)
+			(layers "B.Cu" "B.Mask" "B.Paste")
+			(net 10 "Net-(D1-A)")
+			(pintype "passive")
+			(uuid "8208d972-448e-49ea-b16d-af2680b7e6ef")
+		)
+		(pad "3" smd rect
+			(at 2.54 -4.38 270)
+			(size 1.42 2.6)
+			(layers "B.Cu" "B.Mask" "B.Paste")
+			(net 147 "unconnected-(U1-Pad3)")
+			(pintype "no_connect")
+			(uuid "a9d47f0b-d7c8-40a9-b1a9-b72bdf1338e7")
+		)
+		(pad "4" smd rect
+			(at 2.54 4.38 270)
+			(size 1.42 2.6)
+			(layers "B.Cu" "B.Mask" "B.Paste")
+			(net 12 "/MIDI_IN")
+			(pintype "output")
+			(uuid "05c77e52-da29-4162-ab47-2275b7345a1c")
+		)
+		(pad "5" smd rect
+			(at 0 4.38 270)
+			(size 1.42 2.6)
+			(layers "B.Cu" "B.Mask" "B.Paste")
+			(net 3 "GND")
+			(pintype "power_in")
+			(uuid "3d0fd12a-263f-415c-89b1-a813d2c4419a")
+		)
+		(pad "6" smd rect
+			(at -2.54 4.38 270)
+			(size 1.42 2.6)
+			(layers "B.Cu" "B.Mask" "B.Paste")
+			(net 1 "+3V3")
+			(pintype "power_in")
+			(uuid "f8a4cb21-354e-4490-8731-61b79b4cee30")
+		)
+		(embedded_fonts no)
+		(model "${EASYEDA2KICAD}/easyeda2kicad.3dshapes/SMD-6_L7.3-W6.5-H3.6-LS10.16-P2.54.wrl"
+			(offset
+				(xyz 0 -0 -0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 270)
+			)
+		)
+	)
 	(footprint "PCM_marbastlib-various:LED_6028R"
 		(layer "B.Cu")
 		(uuid "69089454-f6e8-4538-ad15-e61a4c4c758f")
@@ -31789,306 +31789,6 @@
 			)
 			(rotate
 				(xyz 0 0 0)
-			)
-		)
-	)
-	(footprint "easyeda2kicad:SMD-6_L7.3-W6.5-P2.54-LS10.2-BL"
-		(layer "B.Cu")
-		(uuid "9b0e183e-1430-4eb3-b562-ed2937130ad6")
-		(at 106.4 31 -90)
-		(property "Reference" "U1"
-			(at 0 8.38 90)
-			(layer "B.SilkS")
-			(uuid "b964cafd-676e-4c69-900e-364222f2a461")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Value" "H11L1"
-			(at 0 -8.38 90)
-			(layer "B.Fab")
-			(uuid "53df9e6b-3615-4e40-9e59-5796833e615a")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/H11L3M-D.PDF"
-			(at 0 0 90)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "d1b427ea-58d1-44db-a046-141c7bdb8190")
-			(effects
-				(font
-					(size 1.27 1.27)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Description" "Schmitt Trigger Output Optocoupler, High Speed, DIP-6, 1.6mA turn on threshold"
-			(at 0 0 90)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "519c6167-2f67-4391-b620-3b7bd1051cee")
-			(effects
-				(font
-					(size 1.27 1.27)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "LCSC" "C78589"
-			(at 0 0 90)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "74eb3e63-f6c2-4144-af5e-4e8a8f2d14e4")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Display" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "caff0baf-b19a-40e5-97dc-339be07344cf")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "LCSC Part" "C78589"
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "c1f6dc70-36ba-43e7-af3b-cae1005ae853")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Manufacturer" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "93d47d0c-6ef6-4f79-ac06-0261ba8716f3")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Part Number" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "a76852b8-d755-4df2-bb2f-bf66a0ce6f4b")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property "Specifications" ""
-			(at 0 0 270)
-			(unlocked yes)
-			(layer "B.Fab")
-			(hide yes)
-			(uuid "72773ba3-01f7-45cf-b7b1-27b7948c7b78")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(property ki_fp_filters "DIP*W7.62mm* DIP*W10.16mm* SMDIP*W9.53mm*")
-		(path "/3778ee90-de63-4046-86d0-9f49cd995800")
-		(sheetname "/")
-		(sheetfile "synthiota1.kicad_sch")
-		(attr smd)
-		(fp_line
-			(start -3.65 2.85)
-			(end 3.65 2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "6d7395df-2f32-4012-bcc6-41d5db0060a9")
-		)
-		(fp_line
-			(start 3.65 2.85)
-			(end 3.65 -2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "535acec7-fc46-4d36-b86c-34136bb62c7f")
-		)
-		(fp_line
-			(start -3.65 -2.85)
-			(end -3.65 2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "901e8ad2-0d40-4302-80fc-ce03e36cb09e")
-		)
-		(fp_line
-			(start 3.65 -2.85)
-			(end -3.65 -2.85)
-			(stroke
-				(width 0.15)
-				(type solid)
-			)
-			(layer "B.SilkS")
-			(uuid "d45ffd63-c9d5-41f6-acaa-a1b2f5aed16c")
-		)
-		(fp_circle
-			(center -2.92 -2.16)
-			(end -2.72 -2.16)
-			(stroke
-				(width 0.4)
-				(type solid)
-			)
-			(fill no)
-			(layer "B.SilkS")
-			(uuid "3d870f9c-c020-41f4-9174-f9bb21d351e9")
-		)
-		(fp_circle
-			(center -3.81 -4.32)
-			(end -3.66 -4.32)
-			(stroke
-				(width 0.3)
-				(type solid)
-			)
-			(fill no)
-			(layer "B.SilkS")
-			(uuid "160bb57e-0367-4728-8d9c-bf737007f20d")
-		)
-		(fp_circle
-			(center -2.54 -5.08)
-			(end -2.29 -5.08)
-			(stroke
-				(width 0.5)
-				(type solid)
-			)
-			(fill no)
-			(layer "Cmts.User")
-			(uuid "ff5694e8-4121-412b-8abc-89cc4cb8927c")
-		)
-		(fp_circle
-			(center -3.65 -5.08)
-			(end -3.62 -5.08)
-			(stroke
-				(width 0.06)
-				(type solid)
-			)
-			(fill no)
-			(layer "B.Fab")
-			(uuid "2cb82d3f-98e3-474b-995b-390c9c3bb24f")
-		)
-		(fp_text user "${REFERENCE}"
-			(at 0 0 90)
-			(layer "B.Fab")
-			(uuid "7dcbc045-6e9e-4c34-a76e-47b436f30b5f")
-			(effects
-				(font
-					(size 1 1)
-					(thickness 0.15)
-				)
-				(justify mirror)
-			)
-		)
-		(pad "1" smd rect
-			(at -2.54 -4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 9 "Net-(D1-K)")
-			(pintype "passive")
-			(uuid "41479b9a-ee5f-4c2f-afad-a6e983f36994")
-		)
-		(pad "2" smd rect
-			(at 0 -4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 10 "Net-(D1-A)")
-			(pintype "passive")
-			(uuid "95ba3cd3-7735-4042-af71-ace6ed1bd217")
-		)
-		(pad "3" smd rect
-			(at 2.54 -4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 147 "unconnected-(U1-Pad3)")
-			(pintype "no_connect")
-			(uuid "50a3d3be-d571-4810-a6d9-c2ea9ee216a0")
-		)
-		(pad "4" smd rect
-			(at 2.54 4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 12 "/MIDI_IN")
-			(pintype "output")
-			(uuid "4362bede-f3e2-470f-8b25-a8b0374bb872")
-		)
-		(pad "5" smd rect
-			(at 0 4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 3 "GND")
-			(pintype "power_in")
-			(uuid "590dd8e7-d982-43fc-8254-91880a775fc9")
-		)
-		(pad "6" smd rect
-			(at -2.54 4.38 270)
-			(size 1.42 2.6)
-			(layers "B.Cu" "B.Mask" "B.Paste")
-			(net 1 "+3V3")
-			(pintype "power_in")
-			(uuid "bb02c4d4-cb40-489e-bce9-8fb8b78df1ba")
-		)
-		(embedded_fonts no)
-		(model "${EASYEDA2KICAD}/easyeda2kicad.3dshapes/SMD-6_L7.3-W6.5-H3.6-LS10.16-P2.54.wrl"
-			(offset
-				(xyz 0 -0 -0)
-			)
-			(scale
-				(xyz 1 1 1)
-			)
-			(rotate
-				(xyz 0 0 270)
 			)
 		)
 	)
