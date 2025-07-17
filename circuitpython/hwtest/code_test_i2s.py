@@ -36,12 +36,14 @@ mixer.voice[0].play(synth)
 mixer.voice[0].level = 0.25  # 0.25 usually better for headphones, 1.0 for line-in
 
 # more on this later, but makes it sound nicer
-synth.envelope = synthio.Envelope(attack_time=0.0, release_time=0.6)
-
+synth.envelope = synthio.Envelope(attack_time=0.05, attack_level=0.8, release_time=0.6)
 
 while True:
-    synth.play( random.randint(32,60) )
-    time.sleep(0.2)
-    synth.release_all()
-    time.sleep(0.3)
+   n = random.randint(32,60) 
+   print("boop:",n)
+   synth.press( n )
+   time.sleep(0.3)
+   synth.release(n) 
+   time.sleep(0.5)
+
 
