@@ -3189,6 +3189,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -3574,6 +3575,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -3959,6 +3961,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -5000,6 +5003,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -9813,6 +9817,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -10488,6 +10493,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -11453,6 +11459,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -13091,6 +13098,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Potentiometer_THT.3dshapes/Potentiometer_Alps_RK09K_Single_Vertical.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -29927,6 +29935,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/UQFN-20_3x3mm_P0.4mm.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -38873,6 +38882,7 @@
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/UQFN-20_3x3mm_P0.4mm.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
