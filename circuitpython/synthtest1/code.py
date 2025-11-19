@@ -13,6 +13,8 @@ Sep 2025 todbot / Tod Kurt
 
 
 """
+import microcontroller
+microcontroller.cpu.frequency = 250_000_000  # ~100 mA for RP2040 synthiota1
     
 import time
 import rainbowio
@@ -27,6 +29,7 @@ from synthiota_gui import (setup_display, update_page, update_page_vals)
 
 from synth_todbot.paramset import ParamSet, Param
 from synth_todbot.synth1 import Synth
+
 
 leds.fill(0)
 
@@ -137,7 +140,7 @@ while True:
             # fakey sequencer thing
             leds[16+stepi] = 0
             stepi = (stepi+1) % 8
-            leds[16+stepi] = 0x666666
+            leds[16+stepi] = 0x333333
             curr_notenum = note_steps[stepi]
             synth.note_on(curr_notenum)
             
@@ -149,12 +152,7 @@ while True:
         leds[-2] = 0x00ff00   # middle top LED
         leds[-3] = 0x0000ff   # left top LED
 
-        # why was I printing this? 
-        #for i in range(8,12):
-        #    print(i, mpr121s[1].baseline_data(i))
-      
         print(''.join(["%d" % t for t in touched]), [v//256 for v in pot_vals], encoder.position)
-        #synth.release_all()
 
       
     for i in range(len(touched)):  # enumerate(touched):
