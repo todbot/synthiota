@@ -5731,7 +5731,7 @@
 	(footprint "todbot_stuff:Pad-CapTouch-8mm-roundrect"
 		(layer "F.Cu")
 		(uuid "4d44e0fd-22e2-4f95-b181-01b5352e0333")
-		(at 95.4 82.4)
+		(at 98 82.4)
 		(descr "<h3>Conductive Button</h3>\n<p>Used with rubber key pads on the <a href=\"https://www.sparkfun.com/products/retired/8602\">Nordic Key FOB</a>. This one was designed and proven to work with the <a href=\"https://www.sparkfun.com/products/retired/9377\">PolyCase Key FOB enclosures</a>.</p>")
 		(property "Reference" "TP17"
 			(at 0 6.3 180)
@@ -9299,7 +9299,7 @@
 	(footprint "todbot_stuff:Pad-CapTouch-8mm-roundrect"
 		(layer "F.Cu")
 		(uuid "896b9b9b-c5f3-4ce6-8a16-06c4a4eea3f7")
-		(at 117.4 82.4)
+		(at 114 82.4)
 		(descr "<h3>Conductive Button</h3>\n<p>Used with rubber key pads on the <a href=\"https://www.sparkfun.com/products/retired/8602\">Nordic Key FOB</a>. This one was designed and proven to work with the <a href=\"https://www.sparkfun.com/products/retired/9377\">PolyCase Key FOB enclosures</a>.</p>")
 		(property "Reference" "TP18"
 			(at 0 6.3 180)
@@ -40674,9 +40674,9 @@
 		)
 	)
 	(gr_arc
-		(start 97.4 78.9)
-		(mid 98.46066 79.33934)
-		(end 98.9 80.4)
+		(start 100 78.9)
+		(mid 101.06066 79.33934)
+		(end 101.5 80.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40685,9 +40685,9 @@
 		(uuid "0290d1d3-fcb1-4d89-a126-fbba43ec332f")
 	)
 	(gr_arc
-		(start 91.9 80.4)
-		(mid 92.33934 79.33934)
-		(end 93.4 78.9)
+		(start 94.5 80.4)
+		(mid 94.93934 79.33934)
+		(end 96 78.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40707,8 +40707,8 @@
 		(uuid "10dab79d-de2f-4f2b-80cb-bf9f13a780dd")
 	)
 	(gr_line
-		(start 91.9 84.4)
-		(end 91.9 80.4)
+		(start 94.5 84.4)
+		(end 94.5 80.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40738,8 +40738,8 @@
 		(uuid "1b129ee9-e101-481b-b0f6-80b3047e84ce")
 	)
 	(gr_line
-		(start 113.9 84.4)
-		(end 113.9 80.4)
+		(start 110.5 84.4)
+		(end 110.5 80.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40770,9 +40770,9 @@
 		(uuid "3a99f753-ca75-4622-8769-62ebe2e7d4c4")
 	)
 	(gr_arc
-		(start 113.9 80.4)
-		(mid 114.33934 79.33934)
-		(end 115.4 78.9)
+		(start 110.5 80.4)
+		(mid 110.93934 79.33934)
+		(end 112 78.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40791,8 +40791,8 @@
 		(uuid "3be96f4e-d120-4ccb-8c33-765fb644bb6b")
 	)
 	(gr_line
-		(start 97.4 85.9)
-		(end 93.4 85.9)
+		(start 100 85.9)
+		(end 96 85.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40801,8 +40801,8 @@
 		(uuid "3e80bce7-c778-4ded-8e1c-571754ad47eb")
 	)
 	(gr_line
-		(start 115.4 78.9)
-		(end 119.4 78.9)
+		(start 112 78.9)
+		(end 116 78.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40811,8 +40811,8 @@
 		(uuid "514b5d81-a978-4c3d-832c-ce215f1bd507")
 	)
 	(gr_line
-		(start 98.9 80.4)
-		(end 98.9 84.4)
+		(start 101.5 80.4)
+		(end 101.5 84.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40862,8 +40862,8 @@
 		(uuid "8c2444bb-8073-4110-855a-de766c3df5ed")
 	)
 	(gr_line
-		(start 120.9 80.4)
-		(end 120.9 84.4)
+		(start 117.5 80.4)
+		(end 117.5 84.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40872,9 +40872,9 @@
 		(uuid "93ea56e1-89e7-40b0-8d52-e0c747cc0713")
 	)
 	(gr_arc
-		(start 115.4 85.9)
-		(mid 114.33934 85.46066)
-		(end 113.9 84.4)
+		(start 112 85.9)
+		(mid 110.93934 85.46066)
+		(end 110.5 84.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40894,9 +40894,9 @@
 		(uuid "ab741176-6d2c-4069-938d-ca47d90cf353")
 	)
 	(gr_arc
-		(start 119.4 78.9)
-		(mid 120.46066 79.33934)
-		(end 120.9 80.4)
+		(start 116 78.9)
+		(mid 117.06066 79.33934)
+		(end 117.5 80.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40905,9 +40905,9 @@
 		(uuid "b9d3f449-7802-4b16-a086-61b5b3c52bf7")
 	)
 	(gr_arc
-		(start 120.9 84.4)
-		(mid 120.46066 85.46066)
-		(end 119.4 85.9)
+		(start 117.5 84.4)
+		(mid 117.06066 85.46066)
+		(end 116 85.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40936,8 +40936,8 @@
 		(uuid "bdc17d44-5b25-4bfa-a4a2-ae15eecb2877")
 	)
 	(gr_line
-		(start 93.4 78.9)
-		(end 97.4 78.9)
+		(start 96 78.9)
+		(end 100 78.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -40966,8 +40966,8 @@
 		(uuid "cc8ca1af-8699-4371-a98b-f91e955a697a")
 	)
 	(gr_line
-		(start 119.4 85.9)
-		(end 115.4 85.9)
+		(start 116 85.9)
+		(end 112 85.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -41016,9 +41016,9 @@
 		(uuid "e6ae7b9b-7a7a-421a-89ed-5955c760ca9e")
 	)
 	(gr_arc
-		(start 93.4 85.9)
-		(mid 92.33934 85.46066)
-		(end 91.9 84.4)
+		(start 96 85.9)
+		(mid 94.93934 85.46066)
+		(end 94.5 84.4)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -41048,9 +41048,9 @@
 		(uuid "ece0cb83-1bc6-4dd8-9b33-b1792280d609")
 	)
 	(gr_arc
-		(start 98.9 84.4)
-		(mid 98.46066 85.46066)
-		(end 97.4 85.9)
+		(start 101.5 84.4)
+		(mid 101.06066 85.46066)
+		(end 100 85.9)
 		(stroke
 			(width 0.1)
 			(type default)
@@ -41316,7 +41316,7 @@
 		)
 	)
 	(gr_text "↑"
-		(at 95.4 81.4 0)
+		(at 98 82 0)
 		(layer "F.SilkS")
 		(uuid "57303473-a3e1-431a-8ec2-9f4a7aec6d1f")
 		(effects
@@ -41325,7 +41325,6 @@
 				(thickness 0.254)
 				(bold yes)
 			)
-			(justify top)
 		)
 	)
 	(gr_text "MIDI OUT"
@@ -41392,7 +41391,7 @@
 		)
 	)
 	(gr_text "↓"
-		(at 117.4 82.4 0)
+		(at 114 82.4 0)
 		(layer "F.SilkS")
 		(uuid "bc5e2833-39e5-4d97-a4cd-e6eb26cd5ca5")
 		(effects
@@ -49134,15 +49133,15 @@
 		(uuid "a14f2dfb-71d3-43f0-8638-8e5accd3f195")
 	)
 	(segment
-		(start 92.4 87.9)
-		(end 92.4 82.9)
+		(start 98 87.9)
+		(end 98 82.4)
 		(width 0.17)
 		(layer "F.Cu")
 		(net 148)
-		(uuid "7c2cc0a6-5f6b-4cfc-98f8-2184d874c087")
+		(uuid "0838afd2-6c3a-4f7b-af8e-d9bf73603b91")
 	)
 	(via
-		(at 92.4 87.9)
+		(at 98 87.9)
 		(size 0.6)
 		(drill 0.3)
 		(layers "F.Cu" "B.Cu")
@@ -49150,20 +49149,12 @@
 		(uuid "58d394a3-f9ad-4700-b8e7-895eab2b1c53")
 	)
 	(segment
-		(start 92.4 87.9)
-		(end 101.9 87.9)
-		(width 0.17)
-		(layer "B.Cu")
-		(net 148)
-		(uuid "838ae2a8-25fe-4dd2-b632-2a220ff827bf")
-	)
-	(segment
 		(start 101.9 87.9)
 		(end 104 85.8)
 		(width 0.17)
 		(layer "B.Cu")
 		(net 148)
-		(uuid "9b5056af-7791-4a70-9b6c-fc3f71de060b")
+		(uuid "09731ed5-2aaa-4043-885f-55b634c4587a")
 	)
 	(segment
 		(start 104 85.8)
@@ -49171,23 +49162,15 @@
 		(width 0.17)
 		(layer "B.Cu")
 		(net 148)
-		(uuid "fcddbe3e-e6db-4b16-b8f1-5463dbce79d4")
+		(uuid "49a203e2-ddd4-4621-8deb-fd6477659506")
 	)
 	(segment
-		(start 115.9 82.4)
-		(end 118.4 82.4)
+		(start 98 87.9)
+		(end 101.9 87.9)
 		(width 0.17)
-		(layer "F.Cu")
-		(net 149)
-		(uuid "29d444db-fdee-4dd5-ae3b-0e009d35355c")
-	)
-	(segment
-		(start 108.4 89.9)
-		(end 115.9 82.4)
-		(width 0.17)
-		(layer "F.Cu")
-		(net 149)
-		(uuid "9797be8d-5728-4665-b60d-c67779c85034")
+		(layer "B.Cu")
+		(net 148)
+		(uuid "e92aaefb-ee4f-4c21-ac19-673f22fd5543")
 	)
 	(segment
 		(start 108.4 94.4)
@@ -49195,7 +49178,15 @@
 		(width 0.17)
 		(layer "F.Cu")
 		(net 149)
-		(uuid "abd11e53-f2d0-44df-bc06-e2539ea02cb1")
+		(uuid "9400b8b1-d4d0-42fe-80d6-b8f4f2b9eed2")
+	)
+	(segment
+		(start 108.4 89.9)
+		(end 115.9 82.4)
+		(width 0.17)
+		(layer "F.Cu")
+		(net 149)
+		(uuid "a58ae31b-2e72-418d-94be-0b5995150ac7")
 	)
 	(via
 		(at 108.4 94.4)
