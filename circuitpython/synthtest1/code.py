@@ -64,20 +64,28 @@ params = [
 ]
 
 param_set = ParamSet(params, num_knobs=8, knob_smooth=0.125)
+num_pages = param_set.nknobsets
+pagei = 0  # which page of params we're looking at
 
 synth = Synth(mixer.sample_rate, mixer.channel_count, )
 
 mixer.voice[0].play(synth.synth)
 
-dim_by = 15
-last_time = 0
+dim_by = 15  # led fader
+last_debug_time = 0
 last_step_time = 0
 last_encoder_pos = encoder.position
-stepi=0
+stepi = 0
 
-num_pages = param_set.nknobsets
+bpm = 120   # tempo
+steps_per_beat = 2  # eighth notes,
+step_secs = 60 / steps_per_beat / bpm
+gate = 0.5
+gate_secs = step_secs * gate
+#step_millis = 60_000 / steps_per_beat / bpm
+note_steps = (36, 36, 36, 36,  48, 45, 43, 43)
+curr_notenum = 0
 
-pagei = 0
 playing = False
 pot_vals_normalized = [v/65535 for v in pot_vals]
 
@@ -104,6 +112,9 @@ while True:
         if key.pressed:
             print("encoder button!",key)
             playing = not playing
+            if not playing:
+                synth.note_off(curr_notenum)
+                
 
     delta_pos = encoder.position - last_encoder_pos
     last_encoder_pos = encoder.position
@@ -114,19 +125,25 @@ while True:
         update_page(pagei, oldi)
 
     # display update
-    if time.monotonic() - last_step_time > 0.05:
-        last_step_time = time.monotonic()
+    now = time.monotonic()
+    if now - last_step_time > gate_secs:
+        synth.note_off(curr_notenum)
+        
+    if now - last_step_time > step_secs:
+        last_step_time = now
         update_page_vals(params)
 
         if playing:
             # fakey sequencer thing
             leds[16+stepi] = 0
-            stepi = (stepi+1) %8
+            stepi = (stepi+1) % 8
             leds[16+stepi] = 0x666666
+            curr_notenum = note_steps[stepi]
+            synth.note_on(curr_notenum)
+            
       
-      
-    if time.monotonic() - last_time > 0.5:
-        last_time = time.monotonic()
+    if now - last_debug_time > 0.5:
+        last_debug_time = now
       
         leds[-1] = 0xff0000   # right top LED 
         leds[-2] = 0x00ff00   # middle top LED
