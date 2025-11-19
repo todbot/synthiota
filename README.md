@@ -35,7 +35,7 @@ If using the [enclosure](./enclosure), the top part expects the header arrangeme
   - Standard header pins on PCM5102 I2S DAC board (usually sold w/ these pins soldered)
   - I2S DAC w/ header pins is soldered directly to the synthiota board, no socket
 
-<img src="./docs/synthio1_pcb_headers.jpg" width=500>
+<img src="./docs/synthiota1_pcb_headers.jpg" width=500>
 
 (most links are Amazon affiliate links)
 
