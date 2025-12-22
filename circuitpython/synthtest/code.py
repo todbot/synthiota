@@ -35,7 +35,7 @@ octave = 3
 
 notes_default = [60, 36, 36, 36,  48, 48, 43, 43]
 # notes are the sequence, list of [note, velocity, gate lenght]
-notes = [ [n, 100, 0.25] for n in notes_default]
+note_steps = [ [n, 100, 0.25] for n in notes_default]
 
 params = [
     # page 1
@@ -66,7 +66,7 @@ param_set = ParamSet(params, num_knobs=8, knob_smooth=0.125, knob_mode=1)
 #num_pages = 2   # param_set.nknobsets 
 #pagei = 0  # which page of params we're looking at
 
-gui = SynthTestGUI(display, num_pages=2, param_set=param_set, note_steps=notes)
+gui = SynthTestGUI(display, num_pages=2, param_set=param_set, note_steps=note_steps)
 
 # make a synth and start it
 synth = Synth(mixer.sample_rate, mixer.channel_count, )
@@ -93,7 +93,7 @@ def step(stepnum, steps_per_beat):
     # update display here too, in the "shadow" of a played note
     gui.update()
     
-seq = TinySequencer(bpm=bpm, steps_per_beat=steps_per_beat, notes = notes,
+seq = TinySequencer(bpm=bpm, steps_per_beat=steps_per_beat, notes = note_steps,
                     note_on = note_on, note_off = note_off)
 seq.step_cb = step
 
@@ -147,7 +147,7 @@ while True:
             print("note_steps:", pressed_step, note_steps)
             note_steps[pressed_step][0] += delta_pos
             print("note_step:", pressed_step, note_steps[pressed_step][0])
-            gui.update_steps(note_steps)
+            gui.update_steps()
         else:
             if delta_pos < 0:
                 gui.set_page(0)
@@ -197,7 +197,9 @@ while True:
     # debug
     if now - last_debug_time > (60/bpm):
         last_debug_time = now
-      
+
+        gui.update()  # hack
+        
         leds[-1] = 0xff0000   # right top LED 
         leds[-2] = 0x00ff00   # middle top LED
         leds[-3] = 0x0000ff   # left top LED

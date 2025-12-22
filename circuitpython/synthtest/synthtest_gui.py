@@ -106,7 +106,7 @@ class SynthTestGUI:
         pass
 
     def update_steps(self):
-        steps = self.steps
+        steps = self.note_steps
         for i in range(num_steps):
             self.pages[1][0][i].text = "%2d" % steps[i][0]
             self.pages[1][1][i].text = "%2d" % (steps[i][1]*10)
