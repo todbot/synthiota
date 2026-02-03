@@ -36,10 +36,11 @@ octave = 3
 notes_default = [60, 36, 36, 36,  48, 48, 43, 43]
 # notes are the sequence, list of [note, velocity, gate lenght]
 note_steps = [ [n, 100, 0.25] for n in notes_default]
+num_steps = len(note_steps)
 
 params = [
     # page 1
-    #      name     val,  min,  max, str,  synth.attr name
+    #      name     val,  min,  max, fmtstr,  synth.attr name
     Param("Freq", 3000, 100, 5000, "%4d", 'filt_freq'),
     Param('Env',  0.5,  0.0, 1.0, "%.2f", 'filt_env_depth'), 
     Param("ResQ", 1.0,  0.5, 4.0, "%.2f", 'filt_q'),
@@ -99,6 +100,7 @@ seq.step_cb = step
 
 leds.fill(0)  # indicate startup is done
 
+#ui_mode = 1  # 0 = steps, 1 = notes
 dim_by = 10  # led fader
 last_debug_time = 0
 last_encoder_pos = encoder.position
@@ -126,6 +128,7 @@ while True:
     update_pots()
     pot_vals_normalized[:] = [v/65535 for v in pot_vals]
 
+    # update synth params from knob state
     param_set.update_knobs(pot_vals_normalized)
     param_set.apply_knobset(synth.patch)
 
@@ -145,7 +148,9 @@ while True:
         print("delta pos:", delta_pos) #  pressed_step)
         if pressed_step is not None:
             print("note_steps:", pressed_step, note_steps)
+            synth.note_off(note_steps[pressed_step][0])
             note_steps[pressed_step][0] += delta_pos
+            synth.note_on(note_steps[pressed_step][0])
             print("note_step:", pressed_step, note_steps[pressed_step][0])
             gui.update_steps()
         else:
@@ -158,14 +163,19 @@ while True:
     for i,t in enumerate(touched):
         lt = last_touched[i]
         
-        if t and not lt:       # press
+        # pad pressed event
+        if t and not lt: 
             n = Pads.PAD_TO_LED.index(i)
             print("press!", i, n)
             leds[n] = rainbowio.colorwheel(time.monotonic()*50)
             if i in Pads.STEP_PADS:
-                notenum = (octave+1)*12 + n
-                synth.note_on(notenum)
                 pressed_step = n
+                if gui.page_num == 0:   # keyboard mode
+                    notenum = (octave+1)*12 + n
+                else:                   # steps mode
+                    notenum = note_steps[n % num_steps][0]
+                synth.note_on(notenum)
+                    
                 gui.set_note_info("%d" % notenum)
             elif i == Pads.PAD_OCT_UP:
                 octave = min(5, (octave+1))
@@ -176,16 +186,21 @@ while True:
             elif i == Pads.PAD_RSLIDE_A:   # tempo down
                 bpm -= 1
             gui.set_oct_bpm(octave,bpm)
-
+            
+        # pad released event
         elif not t and lt:     # release
             n = Pads.PAD_TO_LED.index(i)
             print("release!", i, n)
             if i in Pads.STEP_PADS:
-                notenum = (octave+1)*12 + n
+                if gui.page_num == 0:   # keyboard mode
+                    notenum = (octave+1)*12 + n
+                else:                   # steps mode
+                    notenum = note_steps[n % num_steps][0]
                 synth.note_off(notenum)
                 pressed_step = None
                 gui.set_note_info("--")
 
+    # handle midi input
     while msg := midi_uart.receive():
         print("midi:", msg)
         if msg.type == tmidi.NOTE_ON and msg.velocity > 0:
@@ -193,8 +208,8 @@ while True:
         if msg.type == tmidi.NOTE_OFF or msg.type == tmidi.NOTE_ON and msg.velocity ==0:
             synth.note_off(msg.note, msg.velocity)
 
-    now = time.monotonic()
     # debug
+    now = time.monotonic()
     if now - last_debug_time > (60/bpm):
         last_debug_time = now
 
