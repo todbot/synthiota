@@ -174,9 +174,8 @@ while True:
         if t and not lt:
             n = Pads.PAD_TO_LED.index(i)
             print("press", i, n)
-            transpose = 8-ntouch.key_number   # chromatic
+            transpose = n-8    # chromatic and lame
             sequencer.transpose = transpose
-
            
         # pad released event
         elif not t and lt:     # release
