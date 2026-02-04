@@ -69,6 +69,7 @@ params = [
     Param('drive', 0.2, 0.0, 1.0, "%.2f", 'drive_mix'),
     Param('delaymix', 0.0, 0.0, 1.0, "%.2f", 'delay_mix'),
 
+# page 2
     Param('delytime', 0.25, 0.0, 1.0, "%.2f", 'delay_time'),
     Param('transpose', 0, -13, 13, "%2d", 'transpose'),
 
@@ -107,24 +108,23 @@ print("mem_free:", gc.mem_free())
 
 last_ui_time = time.monotonic()
 def update_ui():
-    global last_ui_time,last_knobvals
+    global last_ui_time, last_knobvals
     ki = tb_disp.curr_param_pair  # shorthand
     #if time.monotonic() - last_ui_time > 0.05:  # every 50 millis
     if time.monotonic() - last_ui_time > 0.01:  # every 10 millis
         last_ui_time = time.monotonic()
 
-        # just normalized
-        #knobvals = (knobA.value/65535, knobB.value/65535)
-        #print(knobvals, time.monotonic())
-        knobvals = [v/65535 for v in update_pots()]
+        # read the pots compare to last, and update screen to view knob being turned
+        knobvals = update_pots()
+        f = 0.5
         for i in range(8):
-            v = knobvals[i]
             lv = last_knobvals[i]
+            v = knobvals[i]/65535 * f + (1-f) * lv
             if abs(v-lv) > 0.02:
                 tb_disp.curr_param_pair = i//2
-        last_knobvals = knobvals
-        
-        param_set.update_knobs(knobvals)
+            last_knobvals[i] = v
+            
+        param_set.update_knobs(last_knobvals)
  
         # set synth with params
         param_set.apply_knobset(tb) 
@@ -140,7 +140,8 @@ def update_ui():
         tb_disp.update_param_pairs()
 
 sequencer.on_step_callback = tb_disp.show_beat
-sequencer.start()
+#sequencer.start()
+sequencer.stop()
 
 touched = get_touched()
 
@@ -173,20 +174,10 @@ while True:
         if t and not lt:
             n = Pads.PAD_TO_LED.index(i)
             print("press", i, n)
+            transpose = 8-ntouch.key_number   # chromatic
+            sequencer.transpose = transpose
 
-            if n >=8 and n < 15:
-                tb_disp.curr_param_pair = n-8
-                #param_set.idx = tb_disp.curr_param_pair
-                
-            #if i in Pads.STEP_PADS:
-            #    print("STEP PAD:", i)
-                #tb_disp.curr_param_pair = touchpad_to_knobset.index(touch.key_number)
-                #param_set.idx = tb_disp.curr_param_pair
-            #if n
-            #if n in touchpad_to_transpose:
-            #    transpose = touch.key_number   # chromatic
-            #    sequencer.transpose = transpose
-            
+           
         # pad released event
         elif not t and lt:     # release
             pass
