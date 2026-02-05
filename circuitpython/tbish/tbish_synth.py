@@ -58,11 +58,14 @@ wave_saw =  np.linspace(wave_vol, -wave_vol, num=wave_size, dtype=np.int16)   # 
 wave_squ =  np.concatenate((np.ones(wave_size//2, dtype=np.int16) * wave_vol,  # square
                             np.ones(wave_size//2, dtype=np.int16) * -wave_vol))
 wave_saw2 = wave_saw//2 + np.roll(wave_saw,saw_offset)//2    # equiv to np.add()
+wave_saw3 = wave_saw2 + np.roll(wave_saw,saw_offset*2)//2 
 
 waves = (
     wave_squ,
     wave_saw,
     wave_saw2,
+    wave_saw3,
+    wave_saw3,
 )
 
 class TBishSynth:

@@ -46,6 +46,9 @@ seqs = [
      [127, 80, 120, 80,  127, 11, 127, 80]],  # vels 127=accent
     
     [[36, 36-12, 36, 36+12,  36, 0, 36, 0],    # notes, 0 = rest
+     [127,  1,   1, 80,  127, 80, 127, 80]],  # vels 127=accent
+    
+    [[36, 36+12, 0, 0,  36-12, 36, 36, 0],    # notes, 0 = rest
      [127,  1,   1, 80,  127, 80, 127, 80]],  # vels 127=accent  
 ]
 # future path
@@ -81,21 +84,21 @@ params = [
 touchpad_to_knobset = [1,3,6,8,10,13,15]
 touchpad_to_transpose = [0,2,4,5,7,9,11,12,14]
     
-tb = TBishSynth(mixer.sample_rate, mixer.channel_count)
-tb_audio = tb.add_audioeffects()
+tbsynth = TBishSynth(mixer.sample_rate, mixer.channel_count)
+tb_audio = tbsynth.add_audioeffects()
 mixer.voice[0].play(tb_audio)
 
-tb.drive = 1.0
-tb.delay_time = 0.33
+tbsynth.drive = 1.0
+tbsynth.delay_time = 0.33
 
-sequencer = TBishSequencer(tb, seqs=seqs)
+sequencer = TBishSequencer(tbsynth, seqs=seqs)
 sequencer.bpm = bpm
 sequencer.steps_per_beat = steps_per_beat
 
 param_set = ParamSet(params, num_knobs=8, knob_smooth=0.125, knob_mode=ParamSet.KNOB_SCALE)
 last_knobvals = [v/65535 for v in update_pots()]
 #param_set.update_knobs(last_knobvals)
-param_set.apply_params(tb)  # set up synth with param set
+param_set.apply_params(tbsynth)  # set up synth with param set
 
 tb_disp = TBishUI(display, params)
 
@@ -127,15 +130,15 @@ def update_ui():
         param_set.update_knobs(last_knobvals)
  
         # set synth with params
-        param_set.apply_knobset(tb) 
+        param_set.apply_knobset(tbsynth) 
         
         # for non-tb params
         #gate_amount = param_set.param_for_name('gate').val
         bpm = param_set.param_for_name('bpm').val
         sequencer.bpm = bpm
         
-        seq_num = int(param_set.param_for_name('seq').val)
-        sequencer.seq_num = seq_num
+        #seq_num = int(param_set.param_for_name('seq').val)
+        #sequencer.seq_num = seq_num
         
         tb_disp.update_param_pairs()
 
@@ -174,26 +177,28 @@ while True:
         if t and not lt:
             n = Pads.PAD_TO_LED.index(i)
             print("press", i, n)
-            transpose = n-8    # chromatic and lame
-            sequencer.transpose = transpose
+            if i in Pads.STEP_PADS:
+                if sequencer.playing:
+                    transpose = n-8    # chromatic and lame
+                    sequencer.transpose = transpose
+                else:
+                    tbsynth.note_on(36 + n)  # note_off automatically haappens
+            elif i == Pads.PAD_RSLIDE_C:  #
+                seq_num = (sequencer.seq_num + 1) % len(sequencer.seqs)
+                sequencer.seq_num = seq_num
+                print("** changing sequence!", seq_num)
+
            
         # pad released event
         elif not t and lt:     # release
-            pass
+            if i in Pads.STEP_PADS:
+                if sequencer.playing:
+                    pass
+                else:
+                    pass
     
-    # if touch_events := check_touch():
-    #     for touch in touch_events:
-    #         if touch.pressed:
-    #             print("touchpad", touch.key_number)
-    #             if touch.key_number in touchpad_to_knobset:
-    #                 tb_disp.curr_param_pair = touchpad_to_knobset.index(touch.key_number)
-    #                 param_set.idx = tb_disp.curr_param_pair
-    #             if touch.key_number in touchpad_to_transpose:
-    #                 transpose = touch.key_number   # chromatic
-    #                 sequencer.transpose = transpose
                     
     update_ui()
 
     sequencer.update()
-
 
