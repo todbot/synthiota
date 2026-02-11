@@ -6,34 +6,33 @@
 
 This is the main code.py for a TB-like synth
 
-14 May 2025 - @todbot / Tod Kurt
+8 Feb 2026 - @todbot / Tod Kurt
 
 """
-# this reduces some of per-step latency from 10ms down to 6ms
+# this reduces some of per-step latency from 10ms down to 6ms, sigh
 import microcontroller
 microcontroller.cpu.frequency = 200_000_000
 
 import time, random
 import ulab.numpy as np
 import synthio
-#from synth_setup_pts import (mixer, knobA, knobB, keys,
-#                             setup_display, setup_touch, check_touch)
 from synth_setup_synthiota import (display, leds, uart, mpr121s,
-                                   get_touched, update_pots, pot_vals,
-                                   encoder, encoder_sw,
+                                   update_pots, encoder, encoder_sw, get_touch_events,
                                    mixer, Pads)
 
-from paramset import ParamSet, Param
+from mapped_pot_controller import MappedPotController, Parameter
 
 from tbish_synth import TBishSynth, waves
 from tbish_sequencer import TBishSequencer
 from tbish_ui import TBishUI
 
-#display = setup_display()
-#touches = setup_touch()
 
 bpm = 120
 steps_per_beat = 4   # 4 = 16th note, 2 = 8th note, 1 = quarter note
+
+tbsynth = TBishSynth(mixer.sample_rate, mixer.channel_count)
+tb_audio = tbsynth.add_audioeffects()
+mixer.voice[0].play(tb_audio)
 
 seqs = [
     [[36, 36, 48, 36,  48, 48+7, 36, 48],  # notes, 0 = rest
@@ -51,42 +50,44 @@ seqs = [
     [[36, 36+12, 0, 0,  36-12, 36, 36, 0],    # notes, 0 = rest
      [127,  1,   1, 80,  127, 80, 127, 80]],  # vels 127=accent  
 ]
-# future path
-seqs_steps = [
-    [[ ],  # notes,
-     [ ],  # slide,
-     [ ],],  # accent,
-]    
 
-params = [
-    #      name     val,  min,   max, str,  tb.attr name
-    Param("cutoff", 3000, 100, 5000, "%4d", 'cutoff'),
-    Param('envmod', 0.5,  0.0, 1.0, "%.2f",'envmod'), 
-    
-    Param("resQ",  1.0, 0.5, 4.0, "%.2f", 'resonance'),
-    Param('decay', 0.75,  0.0, 1.0, "%.2f", 'decay'),
-    
-    Param('accent', 0.2, 0.0, 1.0, "%.2f", 'accent'),
-    Param('wave', 0, 0, len(waves)-1, "%1d", 'wavenum'),
-
-    Param('drive', 0.2, 0.0, 1.0, "%.2f", 'drive_mix'),
-    Param('delaymix', 0.0, 0.0, 1.0, "%.2f", 'delay_mix'),
-
-# page 2
-    Param('delytime', 0.25, 0.0, 1.0, "%.2f", 'delay_time'),
-    Param('transpose', 0, -13, 13, "%2d", 'transpose'),
-
-    Param('seq', 0, 0, len(seqs)-1, "%1d"),
-    Param('bpm', bpm, 40, 200, "%3d"),
-    
+myconfig = [
+    [
+        Parameter(100, 5000, "Freq", callback=tbsynth.set_cutoff),
+        Parameter(0.0, 1.0, "EnvMod", callback=tbsynth.set_envmod),
+        Parameter(0.5, 4.0, "ResQ", callback=tbsynth.set_resonance),
+        Parameter(0.0, 1.0, "Decay", callback=tbsynth.set_decay),
+        Parameter(0.0, 1.0, "Accent", callback=tbsynth.set_accent),
+        Parameter(0,   3,   "Wave", options=["SAW", "TRI", "SQU", "NZE"], callback=tbsynth.set_wavenum),
+        Parameter(0.0, 1.0, "Drive", callback=tbsynth.set_drive_mix),
+        Parameter(0.0, 1.0, "Delay", callback=tbsynth.set_delay_mix),
+    ],
+    [
+        Parameter(24, 72, 'step0'),
+        Parameter(24, 72, 'step1'),
+        Parameter(24, 72, 'step2'),
+        Parameter(24, 72, 'step3'),
+        Parameter(24, 72, 'step4'),
+        Parameter(24, 72, 'step5'),
+        Parameter(24, 72, 'step6'),
+        Parameter(24, 72, 'step7'),
+    ],   
+    [
+        Parameter(0, 127, 'vel0'),
+        Parameter(0, 127, 'vel1'),
+        Parameter(0, 127, 'vel2'),
+        Parameter(0, 127, 'vel3'),        
+        Parameter(0, 127, 'vel4'),
+        Parameter(0, 127, 'vel5'),
+        Parameter(0, 127, 'vel6'),
+        Parameter(0, 127, 'vel7'),
+    ],   
 ]
 
-touchpad_to_knobset = [1,3,6,8,10,13,15]
-touchpad_to_transpose = [0,2,4,5,7,9,11,12,14]
-    
-tbsynth = TBishSynth(mixer.sample_rate, mixer.channel_count)
-tb_audio = tbsynth.add_audioeffects()
-mixer.voice[0].play(tb_audio)
+potctrl = MappedPotController(myconfig, mode=MappedPotController.MODE_RELATIVE)
+potctrl.load_preset(0, [2345, 0.5,  1.5, 0.75,   0.2, 0.0,  0.0, 0.0])
+potctrl.load_preset(1, [33, 33, 36, 36,  44, 44, 44, 00] )
+
 
 tbsynth.drive = 1.0
 tbsynth.delay_time = 0.33
@@ -95,12 +96,14 @@ sequencer = TBishSequencer(tbsynth, seqs=seqs)
 sequencer.bpm = bpm
 sequencer.steps_per_beat = steps_per_beat
 
-param_set = ParamSet(params, num_knobs=8, knob_smooth=0.125, knob_mode=ParamSet.KNOB_SCALE)
-last_knobvals = [v/65535 for v in update_pots()]
-#param_set.update_knobs(last_knobvals)
-param_set.apply_params(tbsynth)  # set up synth with param set
+last_encoder_pos = encoder.position
 
-tb_disp = TBishUI(display, params)
+tb_disp = TBishUI(display, 8)
+tb_disp.update_param_pairs(*potctrl.get_display_data(0), *potctrl.get_display_data(1))
+
+sequencer.on_step_callback = tb_disp.show_beat
+sequencer.stop()
+
 
 print("="*80)
 print("tbish synth! press button to play/pause")
@@ -109,74 +112,72 @@ print("secs_per_step:%.3f" % sequencer._secs_per_step)
 import gc
 print("mem_free:", gc.mem_free())
 
-last_ui_time = time.monotonic()
-def update_ui():
-    global last_ui_time, last_knobvals
-    ki = tb_disp.curr_param_pair  # shorthand
-    #if time.monotonic() - last_ui_time > 0.05:  # every 50 millis
-    if time.monotonic() - last_ui_time > 0.01:  # every 10 millis
-        last_ui_time = time.monotonic()
 
-        # read the pots compare to last, and update screen to view knob being turned
-        knobvals = update_pots()
-        f = 0.5
-        for i in range(8):
-            lv = last_knobvals[i]
-            v = knobvals[i]/65535 * f + (1-f) * lv
-            if abs(v-lv) > 0.02:
-                tb_disp.curr_param_pair = i//2
-            last_knobvals[i] = v
-            
-        param_set.update_knobs(last_knobvals)
- 
-        # set synth with params
-        param_set.apply_knobset(tbsynth) 
-        
-        # for non-tb params
-        #gate_amount = param_set.param_for_name('gate').val
-        bpm = param_set.param_for_name('bpm').val
-        sequencer.bpm = bpm
-        
-        #seq_num = int(param_set.param_for_name('seq').val)
-        #sequencer.seq_num = seq_num
-        
-        tb_disp.update_param_pairs()
+#disp_mode = 1  # note edit
+disp_mode = 0  # performing
 
-sequencer.on_step_callback = tb_disp.show_beat
-#sequencer.start()
-sequencer.stop()
-
-touched = get_touched()
+tb_disp.show_mode(disp_mode)
 
 while True:
 
-    # handle encoder push switch
-    if key := encoder_sw.events.get():
-        if key.pressed:
-            if sequencer.playing:
-                sequencer.stop()
-                tb_disp.stop()
-                # testing out save/load params
-                s = ParamSet.dump(param_set)
-                print(s)
-                ParamSet.load(s)
-                
-            else:
-                tb_disp.start()
-                sequencer.start()
-
-    # update input state
-    last_touched = touched
-    touched = get_touched()
+    sequencer.update()
     
-    # handle touch pads
-    for i,t in enumerate(touched):
-        lt = last_touched[i]
+    # handle pots
+    raw_potvals = update_pots()
+    pot_changes = potctrl.update(raw_potvals)
+    # Update & use synth params (uses pre-allocated list)
+    current_params = potctrl.values
+    
+    if pot_changes:
+        bank_idx = potctrl.current_bank  
+        if bank_idx == 0:  # synth params
+            labelL, labelR = None,None
+            for i in range(8):
+                if (pot_changes >> i) & 1:
+                    j = (i//2) * 2 
+                    labelL, textL = potctrl.get_display_data(j)
+                    labelR, textR = potctrl.get_display_data(j+1)
+                    tb_disp.curr_param_pair = j
+                    tb_disp.update_param_pairs(labelL, textL, labelR, textR)
+        elif bank_idx == 1:   # note steps
+            for i in range(8):
+                if (pot_changes >> i) & 1:
+                    print("note:", i, potctrl.get_display_data(i))
+
         
-        # pad pressed event
-        if t and not lt:
+    #time.sleep(0.1)
+
+    # handle encoder
+    delta_pos = last_encoder_pos - encoder.position 
+    last_encoder_pos = encoder.position
+    if delta_pos:
+        disp_mode = (disp_mode + 1) % 2
+        print("delta pos:", delta_pos, disp_mode)
+        tb_disp.show_mode(disp_mode)
+        sys.switch_bank(disp_mode, raw_potvals)
+        
+    # handle encoder push switch
+    key = encoder_sw.events.get()
+    if key and key.pressed:
+        if sequencer.playing:
+            sequencer.stop()
+            #tb_disp.stop()
+            # testing out save/load params
+            #s = ParamSet.dump(param_set)  # dump patch to string as JSON
+            #print(s)
+            #ParamSet.load(s)   # load patch in as JSON
+            
+        else:
+            #tb_disp.start()
+            sequencer.start()
+
+    # handle touch
+    touch_events = get_touch_events()
+    for touch in touch_events:
+        i = touch.key_number
+        if touch.pressed:
             n = Pads.PAD_TO_LED.index(i)
-            print("press", i, n)
+            print("touch", i, n)
             if i in Pads.STEP_PADS:
                 if sequencer.playing:
                     transpose = n-8    # chromatic and lame
@@ -188,17 +189,5 @@ while True:
                 sequencer.seq_num = seq_num
                 print("** changing sequence!", seq_num)
 
-           
-        # pad released event
-        elif not t and lt:     # release
-            if i in Pads.STEP_PADS:
-                if sequencer.playing:
-                    pass
-                else:
-                    pass
-    
-                    
-    update_ui()
 
-    sequencer.update()
 

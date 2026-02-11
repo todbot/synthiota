@@ -9,7 +9,6 @@ class TBishSequencer:
         self.seqs = seqs
         self._steps_per_beat = steps_per_beat   # 4 = 16th note, 2 = 8th note, 1 = quarter note
         self.bpm = bpm
-        self.gate_time = 0
         self.gate_amount = 0.75  # traiditional 303 gate length
         self.next_step_time = 0
         self.gate_off_time = 0

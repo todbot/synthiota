@@ -179,12 +179,34 @@ class TBishSynth:
             self.synth.release(self.note)
             self.note = None
 
+    # attribute setters that can be used as callbacks
+    def set_cutoff(self,v):
+        self.cutoff = v
+        
+    def set_envmod(self,v):
+        self.envmod = v
+        
+    def set_decay(self,v):
+        self.decay = v
+        
+    def set_accent(self,v):
+        self.accent = v
+        
+    def set_wavenum(self,v):
+        self.wavenum = v
+        
     @property
     def resonance(self):
         return self.filter.Q
     
     @resonance.setter
     def resonance(self,q):
+        self.filter.Q = q
+        if self.fx_filter1:
+            self.fx_filter1.filter.Q = q
+            self.fx_filter2.filter.Q = q
+            
+    def set_resonance(self,q):
         self.filter.Q = q
         if self.fx_filter1:
             self.fx_filter1.filter.Q = q
@@ -196,7 +218,12 @@ class TBishSynth:
         return self.fx_distortion.pre_gain / 50
     
     @drive.setter
-    def drive(self,d):
+    def drive(self, d):
+        #self.fx_distortion.drive = d  # hmm doesn't seem to work like I expect
+        self.fx_distortion.pre_gain = d * 50
+        self.fx_distortion.post_gain = self.fx_distortion.pre_gain * -0.5
+        
+    def set_drive(self, d):
         #self.fx_distortion.drive = d  # hmm doesn't seem to work like I expect
         self.fx_distortion.pre_gain = d * 50
         self.fx_distortion.post_gain = self.fx_distortion.pre_gain * -0.5
@@ -209,12 +236,18 @@ class TBishSynth:
     def drive_mix(self, m):
         self.fx_distortion.mix = m
         
+    def set_drive_mix(self, m):
+        self.fx_distortion.mix = m
+        
     @property
     def delay_mix(self):
         return self.fx_delay.mix
     
     @delay_mix.setter
     def delay_mix(self, m):
+        self.fx_delay.mix = m
+
+    def set_delay_mix(self, m):
         self.fx_delay.mix = m
         
     @property
@@ -223,4 +256,7 @@ class TBishSynth:
     
     @delay_time.setter
     def delay_time(self, t):
+        self.fx_delay.delay_ms = self.secs_per_step * 1000 * 4 * t   # FIXME: explain 4
+
+    def set_delay_time(self, t):
         self.fx_delay.delay_ms = self.secs_per_step * 1000 * 4 * t   # FIXME: explain 4
