@@ -85,14 +85,14 @@ class MappedPotController:
         self.values = [0.0] * self.num_pots 
         self.current_bank = 0
 
-        # Optimization 1: Use array.array for hardware tracking. 
+        # Use array.array for hardware tracking. 
         # These are pre-allocated contiguous memory blocks that don't create new objects.
         # 'H' is unsigned short (16-bit)
         self.last_raw = array.array('H', [0] * self.num_pots)
         self.last_reported = array.array('H', [0] * self.num_pots)
         self.active_flags = [False] * self.num_pots
         
-        # Optimization 2: Pre-calculate the denominator for normalization
+        # Pre-calculate the denominator for normalization
         self._norm_denom = 65535 - (window << 1)
 
     def load_preset(self, bank_idx, real_values):
