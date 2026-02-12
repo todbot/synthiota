@@ -64,8 +64,13 @@ class MappedPotController:
     Handles noise filtering (hysteresis) and provides two modes for 
     switching between virtual banks without parameter jumps.
 
-    :param num_pots: Number of physical potentiometers.
-    :param num_banks: Number of virtual layers (banks) available.
+    Constants:
+        MODE_TAKEOVER (0): Value only changes once physical pot 'catches' 
+            the current digital value.
+        MODE_RELATIVE (1): Value changes proportionally to physical movement, 
+            eliminating jumps immediately.
+
+    :param all_configs: a list of lists of Parameters [[Param, Param...], [Bank1...]].
     :param mode: Sets interaction logic (MODE_RELATIVE or MODE_TAKEOVER).
     :param window: Hysteresis window under which changes are ignored.
     """
