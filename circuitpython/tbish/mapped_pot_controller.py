@@ -50,10 +50,9 @@ class Parameter:
 
     def format_value(self, raw_int):
         """Formats the value for a UI display."""
-        if self.options:
-            idx = (raw_int * (len(self.options) - 1)) // 65535
-            return self.options[idx]
         val = self.map_value(raw_int)
+        if self.options:
+            return self.options[val]
         return str(val) if self.is_int else f"{val:.{self.decimals}f}"
 
 
@@ -202,8 +201,9 @@ class MappedPotController:
                 if bank[i] != old_raw_val:
                     cfg = self.configs[self.current_bank][i]
                     new_mapped_val = cfg.map_value(bank[i])
-                    
-                    if new_mapped_val != self.values[i]:
+
+                    # does an abs check instead of strict equality because noisy pots
+                    if abs(new_mapped_val - self.values[i]) > 0.02:
                         changed_mask |= (1 << i)
                         self.values[i] = new_mapped_val
                         if cfg.callback:
