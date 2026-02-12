@@ -86,6 +86,10 @@ class TBishSynth:
         self.filter = synthio.Biquad(mode=synthio.FilterMode.LOW_PASS,
                                      frequency=self.filt_env, Q=1.0)
         self.glider = Glider(0.0, 0)
+        self.fx_distortion = None
+        self.fx_filter1 = None
+        self.fx_filter2 = None
+        self.fx_delay = None
  
     def add_audioeffects(self):
         """ Set up the necessary effects chain for TBsynth and
@@ -120,7 +124,7 @@ class TBishSynth:
         self.fx_delay = audiodelays.Echo(**fxcfg, mix=0.0,
                                          max_delay_ms = 400,
                                          delay_ms = self.secs_per_step * 1000 * 4,
-                                         decay = 0.1,
+                                         decay = 0.15,
                                          freq_shift = False,
                                          )
         self.fx_delay.play(self.fx_distortion)
@@ -219,44 +223,61 @@ class TBishSynth:
     
     @drive.setter
     def drive(self, d):
-        #self.fx_distortion.drive = d  # hmm doesn't seem to work like I expect
-        self.fx_distortion.pre_gain = d * 50
-        self.fx_distortion.post_gain = self.fx_distortion.pre_gain * -0.5
+        if self.fx_distortion:
+            #self.fx_distortion.drive = d  # hmm doesn't seem to work like I expect
+            self.fx_distortion.pre_gain = d * 50
+            self.fx_distortion.post_gain = self.fx_distortion.pre_gain * -0.5
         
     def set_drive(self, d):
-        #self.fx_distortion.drive = d  # hmm doesn't seem to work like I expect
-        self.fx_distortion.pre_gain = d * 50
-        self.fx_distortion.post_gain = self.fx_distortion.pre_gain * -0.5
+        if self.fx_distortion:
+            #self.fx_distortion.drive = d  # hmm doesn't seem to work like I expect
+            self.fx_distortion.pre_gain = d * 50
+            self.fx_distortion.post_gain = self.fx_distortion.pre_gain * -0.5
         
     @property
     def drive_mix(self):
-        return self.fx_distortion.mix
+        if self.fx_distortion:
+            return self.fx_distortion.mix
+        else:
+            return 0
     
     @drive_mix.setter
     def drive_mix(self, m):
-        self.fx_distortion.mix = m
+        if self.fx_distortion:
+            self.fx_distortion.mix = m
         
     def set_drive_mix(self, m):
-        self.fx_distortion.mix = m
+        if self.fx_distortion:
+            self.fx_distortion.mix = m
         
     @property
     def delay_mix(self):
-        return self.fx_delay.mix
+        if self.fx_delay_mix:
+            return self.fx_delay.mix
+        else:
+            return 0
     
     @delay_mix.setter
     def delay_mix(self, m):
-        self.fx_delay.mix = m
+        if self.fx_delay:
+            self.fx_delay.mix = m
 
     def set_delay_mix(self, m):
-        self.fx_delay.mix = m
+        if self.fx_delay:
+            self.fx_delay.mix = m
         
     @property
     def delay_time(self):
-        return self.fx_delay.delay_ms / (self.secs_per_step * 1000 * 4)
+        if self.fx_delay:
+            return self.fx_delay.delay_ms / (self.secs_per_step * 1000 * 4)
+        else:
+            return 0
     
     @delay_time.setter
     def delay_time(self, t):
-        self.fx_delay.delay_ms = self.secs_per_step * 1000 * 4 * t   # FIXME: explain 4
+        if self.fx_delay:
+            self.fx_delay.delay_ms = self.secs_per_step * 1000 * 4 * t   # FIXME: explain 4
 
     def set_delay_time(self, t):
-        self.fx_delay.delay_ms = self.secs_per_step * 1000 * 4 * t   # FIXME: explain 4
+        if self.fx_delay:
+            self.fx_delay.delay_ms = self.secs_per_step * 1000 * 4 * t   # FIXME: explain 4
