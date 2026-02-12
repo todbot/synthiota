@@ -46,7 +46,7 @@ dw, dh = 132,64
 mpr121_addrs = (0x5a, 0x5b)
 num_leds = 8 * 3 + 3
 num_pots = 8
-
+num_pads = 8 * 3
 
 # hook up external stereo I2S audio DAC board
 audio = audiobusio.I2SOut(bit_clock=i2s_bck_pin, word_select=i2s_lck_pin, data=i2s_dat_pin)
@@ -89,6 +89,9 @@ leds.fill(0x110011)
 encoder = rotaryio.IncrementalEncoder(pin_a=encoderA_pin, pin_b=encoderB_pin, divisor=4)
 encoder_sw = keypad.Keys((encoderSW_pin,), value_when_pressed=False, pull=True)
 
+touched = [0] * num_pads
+last_touched = [0] * num_pads
+
 pot = analogio.AnalogIn(pot_pin)
 pot_vals = [0] * num_pots
 pot_sels = []
@@ -112,6 +115,22 @@ def get_touched():
     touched1 = mpr121s[1].touched_pins
     touched = touched0 + touched1
     return touched
+
+def get_touch_events():
+    """Check the touch inputs, return keypad-like Events"""
+    global touched, last_touched
+    last_touched = touched
+    touched = get_touched()
+    
+    events = []
+    for i,t in enumerate(touched):
+        lt = last_touched[i]
+        if t and not lt:      # pad pressed event
+            events.append(keypad.Event(i,True))
+        elif not t and lt:    # pad released event
+            events.append(keypad.Event(i,False))
+    return events
+
       
 class Pads:
     # map touch id to led index
@@ -129,4 +148,10 @@ class Pads:
     PAD_LSLIDE_C = 23
     PAD_LSLIDE_B = 22
     PAD_LSLIDE_A = 21
+
+    # hmm need a better place for this
+    LED_EDIT =  24
+    LED_MODE =  25
+    LED_PLAY =  26
+    
 
