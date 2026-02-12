@@ -1,3 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Tod Kurt
+# SPDX-License-Identifier: MIT
+"""
+`mapped_pot_controller.py`
+================================================================================
+
+`Parameter` is a configuration for a single controlled value.
+
+`MappedPotController` maps those parameters to knobs and back again.
+
+10 Feb 2026 - @todbot / Tod Kurt
+"""
+
 import array
 
 class Parameter:
@@ -192,7 +205,6 @@ class MappedPotController:
                             cfg.callback(new_mapped_val)
 
             self.last_reported[i] = adj
-            # Optimization 5: Update in-place instead of creating a new list
             self.last_raw[i] = raw
             
         return changed_mask
