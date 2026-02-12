@@ -36,18 +36,23 @@ Common post effects added to TB-303 are:
 * Overdrive / Distortion
 * Delay, usually tempo-sync'd
 
-Both of these effects are added to this synth.
+Both of these effects are added to this synth.  (for RP2350)
 
 """
 # Sorta like a TB303
 import synthio
 import ulab.numpy as np
+
+# Check if we have access to the audioeffects (on RP2350)
+# needed to make beter TB-303 sound. If not, like on RP2040, go without.
+# NB: we can make a custom RP2040 build that has audiofilters.Filter & audiodelays
 try:
     import audiofilters
-    from audiofilters import Distortion, Filter
+    from audiofilters import Filter, Distortion
     import audiodelays
+    has_audioeffects = True
 except (ImportError, NameError):
-    pass
+    has_audioeffects = False
 
 from pitch_glider import Glider
 
@@ -90,6 +95,9 @@ class TBishSynth:
         self.fx_filter1 = None
         self.fx_filter2 = None
         self.fx_delay = None
+        self.audio_out = self.synth   # attach 'audio_out' to AudioMixer
+        if has_audioeffects:
+            self.audio_out = self.add_audioeffects()
  
     def add_audioeffects(self):
         """ Set up the necessary effects chain for TBsynth and
@@ -97,7 +105,8 @@ class TBishSynth:
         fxcfg = { 'sample_rate': self.synth.sample_rate,
                   'channel_count': self.synth.channel_count,
                   'buffer_size': 1024 }
-        
+
+        print("tbish_synth: adding audioeffects")
         # No distortion on rp2040 (not enough CPU)
         self.fx_distortion = Distortion(**fxcfg, mix = 0.0,
                                         #mode = audiofilters.DistortionMode.CLIP,
@@ -131,8 +140,7 @@ class TBishSynth:
         self.fx_distortion.play(self.fx_filter2)  # plug 2nd filter into distortion
         self.fx_filter2.play(self.fx_filter1)  # plug 1st filter into 2nd filter
         self.fx_filter1.play(self.synth)   # plug synth into 1st filter
-        #return self.fx_distortion  # the "output" of this synth
-        return self.fx_delay   # the "output" of this synth
+        return self.fx_delay   # the "audio output" of this synth
 
     def note_on_step(self, midi_note, slide=False, accent=False):
         """Trigger a note, with slide and accent"""
@@ -146,7 +154,7 @@ class TBishSynth:
         if accent:
             attack_level = min(1.0, attack_level + 0.5 * self.accent)
             cutoff = max(cutoff, 4000 * self.accent)   # FIXME: verify
-            print("\ncutoff:", cutoff, self.cutoff, "\n")
+            #print("\ncutoff:", cutoff, self.cutoff, "\n")
             #resonance *= 1.3  # FIXME: how to do 
             envmod = min(1.0, envmod + 0.25 * self.accent)
         if slide:
@@ -183,7 +191,7 @@ class TBishSynth:
             self.synth.release(self.note)
             self.note = None
 
-    # attribute setters that can be used as callbacks
+    # attribute setters that can be used as callbacks (faster than setattr())
     def set_cutoff(self,v):
         self.cutoff = v
         
