@@ -72,21 +72,11 @@ myconfig = [
         Parameter(24, 72, 'step6'),
         Parameter(24, 72, 'step7'),
     ],   
-    [
-        Parameter(0, 127, 'vel0'),
-        Parameter(0, 127, 'vel1'),
-        Parameter(0, 127, 'vel2'),
-        Parameter(0, 127, 'vel3'),        
-        Parameter(0, 127, 'vel4'),
-        Parameter(0, 127, 'vel5'),
-        Parameter(0, 127, 'vel6'),
-        Parameter(0, 127, 'vel7'),
-    ],   
 ]
 
 potctrl = MappedPotController(myconfig, mode=MappedPotController.MODE_RELATIVE)
 potctrl.load_preset(0, [2345, 0.5,  1.5, 0.75,   0.2, 0.0,  0.0, 0.0])
-potctrl.load_preset(1, [33, 33, 36, 36,  44, 44, 44, 00] )
+potctrl.load_preset(1, seqs[0][0] )
 
 
 tbsynth.drive = 1.0
@@ -125,16 +115,16 @@ while True:
     # handle pots
     raw_potvals = update_pots()
     pot_changes = potctrl.update(raw_potvals)
-    # Update & use synth params (uses pre-allocated list)
     current_params = potctrl.values
     
     if pot_changes:
+        print("%02x" % pot_changes, current_params)
         bank_idx = potctrl.current_bank  
         if bank_idx == 0:  # synth params
             labelL, labelR = None,None
             for i in range(8):
                 if (pot_changes >> i) & 1:
-                    j = (i//2) * 2 
+                    j = (i//2) * 2   # FIXME all of this
                     labelL, textL = potctrl.get_display_data(j)
                     labelR, textR = potctrl.get_display_data(j+1)
                     tb_disp.curr_param_pair = j
@@ -154,7 +144,7 @@ while True:
         disp_mode = (disp_mode + 1) % 2
         print("delta pos:", delta_pos, disp_mode)
         tb_disp.show_mode(disp_mode)
-        sys.switch_bank(disp_mode, raw_potvals)
+        potctrl.switch_bank(disp_mode, raw_potvals)
         
     # handle encoder push switch
     key = encoder_sw.events.get()
