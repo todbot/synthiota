@@ -15,6 +15,7 @@ microcontroller.cpu.frequency = 200_000_000
 
 import time, random
 import ulab.numpy as np
+import rainbowio
 import synthio
 from synth_setup_synthiota import (display, leds, uart, mpr121s,
                                    update_pots, encoder, encoder_sw, get_touch_events,
@@ -31,11 +32,10 @@ bpm = 120
 steps_per_beat = 4   # 4 = 16th note, 2 = 8th note, 1 = quarter note
 
 tbsynth = TBishSynth(mixer.sample_rate, mixer.channel_count)
-tb_audio = tbsynth.add_audioeffects()
-mixer.voice[0].play(tb_audio)
+mixer.voice[0].play(tbsynth.audio_out)
 
 seqs = [
-    [[36, 36, 48, 36,  48, 48+7, 36, 48],  # notes, 0 = rest
+    [[24, 36, 48, 36,  48, 48+7, 36, 48],  # notes, 0 = rest
      [127, 80, 80, 80,  127, 1, 30, 1]],   # vels, 1=slide, 127=accent
     
     [[36, 48, 36, 48,  36, 48, 36, 48],  # notes, 0 = rest
@@ -58,7 +58,7 @@ myconfig = [
         Parameter(0.5, 4.0, "ResQ", callback=tbsynth.set_resonance),
         Parameter(0.0, 1.0, "Decay", callback=tbsynth.set_decay),
         Parameter(0.0, 1.0, "Accent", callback=tbsynth.set_accent),
-        Parameter(0,   3,   "Wave", options=["SAW", "TRI", "SQU", "NZE"], callback=tbsynth.set_wavenum),
+        Parameter(0,   3,   "Wave", options=["0SQU", "1SAW", "2SW2", "3SW3"], callback=tbsynth.set_wavenum),
         Parameter(0.0, 1.0, "Drive", callback=tbsynth.set_drive_mix),
         Parameter(0.0, 1.0, "Delay", callback=tbsynth.set_delay_mix),
     ],
@@ -78,7 +78,6 @@ potctrl = MappedPotController(myconfig, mode=MappedPotController.MODE_RELATIVE)
 potctrl.load_preset(0, [2345, 0.5,  1.5, 0.75,   0.2, 0.0,  0.0, 0.0])
 potctrl.load_preset(1, seqs[0][0] )
 
-
 tbsynth.drive = 1.0
 tbsynth.delay_time = 0.33
 
@@ -91,9 +90,14 @@ last_encoder_pos = encoder.position
 tb_disp = TBishUI(display, 8)
 tb_disp.update_param_pairs(*potctrl.get_display_data(0), *potctrl.get_display_data(1))
 
-sequencer.on_step_callback = tb_disp.show_beat
-sequencer.stop()
+def show_step(i, steps_per_beat, seq_len):
+    leds[16 + i] = 0x333333   # FIXME
+    if i % steps_per_beat == 0:
+        leds[Pads.LED_PLAY] = 0x333333 
+    tb_disp.show_beat(i, steps_per_beat, seq_len)
 
+sequencer.on_step_callback = show_step
+sequencer.stop()
 
 print("="*80)
 print("tbish synth! press button to play/pause")
@@ -107,11 +111,15 @@ print("mem_free:", gc.mem_free())
 disp_mode = 0  # performing
 
 tb_disp.show_mode(disp_mode)
+dim_by = 5
 
 while True:
 
+    # do LEDs  (fixme: use np to speed this up)
+    leds[:] = [[max(i-dim_by,0) for i in l] for l in leds] # dim all by (dim_by,dim_by,dim_by)
+
     sequencer.update()
-    
+
     # handle pots
     raw_potvals = update_pots()
     pot_changes = potctrl.update(raw_potvals)
@@ -125,6 +133,7 @@ while True:
             for i in range(8):
                 if (pot_changes >> i) & 1:
                     j = (i//2) * 2   # FIXME all of this
+                    print(i, j, potctrl.get_display_data(i), potctrl.get_display_data(j))
                     labelL, textL = potctrl.get_display_data(j)
                     labelR, textR = potctrl.get_display_data(j+1)
                     tb_disp.curr_param_pair = j
@@ -167,6 +176,7 @@ while True:
         i = touch.key_number
         if touch.pressed:
             n = Pads.PAD_TO_LED.index(i)
+            leds[n] = rainbowio.colorwheel(time.monotonic()*50)
             print("touch", i, n)
             if i in Pads.STEP_PADS:
                 if sequencer.playing:
