@@ -160,12 +160,14 @@ class Pads:
     # pad defs
     PAD_OCT_DOWN = const(19)
     PAD_OCT_UP = 20
+    
     PAD_RSLIDE_C = 14
     PAD_RSLIDE_B = 13
     PAD_RSLIDE_A = 12
-    PAD_LSLIDE_C = 23
+    
+    PAD_LSLIDE_C = 21
     PAD_LSLIDE_B = 22
-    PAD_LSLIDE_A = 21
+    PAD_LSLIDE_A = 23
 
     # hmm need a better place for this
     LED_EDIT =  24

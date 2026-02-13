@@ -14,18 +14,27 @@ class TBishUI(displayio.Group):
         self.display = display   # only needed so we can refresh
         display.root_group = self
         
+        palette = displayio.Palette(1)
+        palette[0] = cw
+        
         self.playGroup = displayio.Group()
         self.editGroup = displayio.Group()
         self.append(self.playGroup)
         self.append(self.editGroup)
         
         self.editGroup.hidden = True
-
-        # labels for mode
-        self.labelmode = label.Label(fnt, text="mode", color=cw, x=103, y=58, scale=1)
-        self.append(self.labelmode)
+       
+        # Elements on all pages
         
-        # play group UI elements
+        self.translabel = label.Label(fnt, text="+12", color=cw, x=58, y=58)
+        self.modelabel = label.Label(fnt, text="mode", color=cw, x=80, y=58)
+        self.seqlabel = label.Label(fnt, text="0", color=cw, x=110, y=58)
+        self.stepspot =  vectorio.Rectangle(pixel_shader=palette, width=10, height=4, x=5, y=38)
+        logo = label.Label(fnt, text="TBish", color=cw, x=0, y=60)
+        for l in (self.modelabel, self.seqlabel, self.translabel, self.stepspot, logo):
+            self.append(l)
+                
+        # Play group UI elements
         
         self.num_param_pairs = num_params//2
         self.curr_param_pair = 0
@@ -35,26 +44,30 @@ class TBishUI(displayio.Group):
         self.textB = label.Label(fnt, text="tB", color=cw, x=75, y=24, scale=2)
 
         # labels for the currently editable parameters
-        self.labelA = label.Label(fnt, text="lablA", color=cw, x=1, y=8, scale=1)
-        self.labelB = label.Label(fnt, text="lablB", color=cw, x=75, y=8, scale=1)
+        self.labelA = label.Label(fnt, text="lablA", color=cw, x=1, y=8)
+        self.labelB = label.Label(fnt, text="lablB", color=cw, x=75, y=8)
         
-        palette = displayio.Palette(1)
-        palette[0] = cw
-        #self.rect = vectorio.Rectangle(pixel_shader=palette, width=64, height=1, x=32, y=1)
+        #rect = vectorio.Rectangle(pixel_shader=palette, width=64, height=1, x=32, y=1)
         self.paramspot = vectorio.Rectangle(pixel_shader=palette, width=4, height=4, x=32, y=5)
-        self.stepspot =  vectorio.Rectangle(pixel_shader=palette, width=5, height=5, x=64, y=60)
         self.playGroup.append(self.paramspot)
-        self.playGroup.append(self.stepspot)
         
         for l in (self.textA, self.textB, self.labelA, self.labelB):
             self.playGroup.append(l)
 
-        logo = label.Label(fnt, text="TBishBassSynth", color=cw, x=20, y=45)
-        self.playGroup.append(logo)
-
-        for i in range(8):
-            l = label.Label(fnt, text="34", color=cw, x=10+i*10, y=45)
+        # Edit group UI elements
+        
+        bpmlabellabel = label.Label(fnt, text="bpm:", color=cw, x=1, y=8)
+        self.bpmlabel = label.Label(fnt, text="123", color=cw, x=23, y=8)
+        self.notelabels = displayio.Group()
+        self.accentlabels = displayio.Group()
+        for l in (self.notelabels, self.accentlabels, self.bpmlabel, bpmlabellabel):
             self.editGroup.append(l)
+            
+        for i in range(8):
+            al = label.Label(fnt, text="", color=cw, x=5+i+15, y=25)
+            l = label.Label(fnt, text="34", color=cw, x=5+i*15, y=30)
+            self.notelabels.append(l)
+            self.accentlabels.append(al)
 
         self.display.refresh()
 
@@ -62,19 +75,29 @@ class TBishUI(displayio.Group):
         self.curr_param_pair = (self.curr_param_pair+1) % self.num_param_pairs
     
     def show_beat(self, step, steps_per_beat, seq_len):
-        self.stepspot.x = 5 + step * 6
-        
-    def update_seq(self, seq):
+        self.stepspot.x = 5 + step * 15
+
+    def update_bpm(self, b):
+        self.bpmlabel.text = "%3d" % b
+
+    def update_transpose(self, t):
+        self.translabel.text = "%+2d" % t
+
+    def update_seq(self, seqs, seqnum):
+        self.seqlabel.text = "%2d" % seqnum
         for i in range(8):
-            pass
+            self.notelabels[i].text = "%2d" % seqs[seqnum][0][i]
+
+    def update_seq_step(self, i, notenum, vel=100):
+        self.notelabels[i].text = "%2d" % notenum
             
     def show_mode(self, mode):
         if mode == 0:
-            self.labelmode.text = "play"
+            self.modelabel.text = "play"
             self.playGroup.hidden = False
             self.editGroup.hidden = True
         if mode == 1:
-            self.labelmode.text = "edit"
+            self.modelabel.text = "edit"
             self.playGroup.hidden = True
             self.editGroup.hidden = False
 

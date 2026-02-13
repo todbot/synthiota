@@ -202,8 +202,7 @@ class MappedPotController:
                     cfg = self.configs[self.current_bank][i]
                     new_mapped_val = cfg.map_value(bank[i])
 
-                    # does an abs check instead of strict equality because noisy pots
-                    if abs(new_mapped_val - self.values[i]) > 0.02:
+                    if new_mapped_val != self.values[i]:  # only on new val change
                         changed_mask |= (1 << i)
                         self.values[i] = new_mapped_val
                         if cfg.callback:
