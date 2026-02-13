@@ -108,7 +108,6 @@ print("secs_per_step:%.3f" % sequencer._secs_per_step)
 import gc
 print("mem_free:", gc.mem_free())
 
-
 #disp_mode = 1  # note edit
 disp_mode = 0  # performing
 
@@ -123,7 +122,12 @@ while True:
 
     # do LEDs  (fixme: use np to speed this up)
     leds[:] = [[max(i-dim_by,0) for i in l] for l in leds] # dim all by (dim_by,dim_by,dim_by)
+    if disp_mode == 0 and not sequencer.playing:
+        leds[Pads.LED_PLAY] = 0x333333
+    if disp_mode == 1:
+        leds[Pads.LED_EDIT] = 0x333333
 
+    
     # handle pots
     raw_potvals = update_pots()
     pot_changes = potctrl.update(raw_potvals)
