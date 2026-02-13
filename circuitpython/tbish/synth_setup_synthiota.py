@@ -84,7 +84,7 @@ spi = busio.SPI(clock=disp_sclk, MOSI=disp_mosi)
 display_bus = fourwire.FourWire(spi, command = disp_dc, reset=disp_res, baudrate=24_000_000)
 display = adafruit_displayio_sh1106.SH1106(display_bus, width=dw, height=dh, colstart=3)
 
-leds = neopixel.NeoPixel(led_pin, num_leds, brightness=0.1)
+leds = neopixel.NeoPixel(led_pin, num_leds, brightness=0.1, auto_write=False)
 leds.fill(0x110011)
 
 encoder = rotaryio.IncrementalEncoder(pin_a=encoderA_pin, pin_b=encoderB_pin, divisor=4)

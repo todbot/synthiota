@@ -13,7 +13,7 @@ This is the main code.py for a TB-like synth
 import microcontroller
 microcontroller.cpu.frequency = 200_000_000
 
-import time, random
+import time, random, gc
 import ulab.numpy as np
 import rainbowio
 import synthio
@@ -102,17 +102,16 @@ sequencer.on_step_callback = show_step
 sequencer.stop()
 
 print("="*80)
-print("tbish synth! press button to play/pause")
+print("tbish synth! press encoder button to play/pause")
 print("="*80)
 print("secs_per_step:%.3f" % sequencer._secs_per_step)
-import gc
 print("mem_free:", gc.mem_free())
 
 #disp_mode = 1  # note edit
 disp_mode = 0  # performing
 
 tb_disp.show_mode(disp_mode)
-dim_by = 5
+dim_by = 2
 
 transpose = 0
 transpose_oct = 0
@@ -120,13 +119,25 @@ while True:
 
     sequencer.update()
 
-    # do LEDs  (fixme: use np to speed this up)
+    # handle LEDs
+    #               (fixme: use np to speed this fade up)
     leds[:] = [[max(i-dim_by,0) for i in l] for l in leds] # dim all by (dim_by,dim_by,dim_by)
-    if disp_mode == 0 and not sequencer.playing:
-        leds[Pads.LED_PLAY] = 0x333333
-    if disp_mode == 1:
-        leds[Pads.LED_EDIT] = 0x333333
 
+    if disp_mode == 0:  # PLAY mode
+        if not sequencer.playing:
+            leds[Pads.LED_PLAY] = 0x333333
+    if disp_mode == 1:  # EDIT sequence mode
+        leds[Pads.LED_EDIT] = 0x333333
+        for i in range(8):
+            v = seqs[sequencer.seq_num][1][i]
+            c = 0x333333
+            if v == 127:
+                c = 0xff3333
+            elif v == 1:
+                c = 0x000033
+            leds[Pads.PAD_TO_LED[i]] = c
+
+    leds.show()
     
     # handle pots
     raw_potvals = update_pots()
@@ -172,7 +183,6 @@ while True:
             #s = ParamSet.dump(param_set)  # dump patch to string as JSON
             #print(s)
             #ParamSet.load(s)   # load patch in as JSON
-            
         else:
             sequencer.start()
 
@@ -185,12 +195,16 @@ while True:
             leds[n] = rainbowio.colorwheel(time.monotonic()*50)
             print("touch", i, n)
             if i in Pads.STEP_PADS:
-                if sequencer.playing:
-                    transpose = n-8    # chromatic and lame
-                    sequencer.transpose = transpose + transpose_oct*12
-                    tb_disp.update_transpose(sequencer.transpose)
-                else:
-                    tbsynth.note_on(36 + n + transpose_oct*12)  # note_off automatically haappens
+                if disp_mode == 0:
+                    if sequencer.playing:
+                        transpose = n-8    # chromatic and lame
+                        sequencer.transpose = transpose + transpose_oct*12
+                        tb_disp.update_transpose(sequencer.transpose)
+                    else:
+                        tbsynth.note_on(36 + n + transpose_oct*12)  # note_off automatically haappens
+                else:  # sequence edit mode
+                    pass
+                    
             elif i == Pads.PAD_OCT_UP:
                 transpose_oct = min(transpose_oct+1, 3)
                 sequencer.transpose = transpose + transpose_oct*12
@@ -199,7 +213,7 @@ while True:
                 transpose_oct = max(transpose_oct-1, -2)
                 sequencer.transpose = transpose + transpose_oct*12                
                 tb_disp.update_transpose(sequencer.transpose)
-            elif i == Pads.PAD_RSLIDE_C:  # change sequence on top-left pad press
+            elif i == Pads.PAD_RSLIDE_C:  # change sequence on top-right pad press
                 seq_num = (sequencer.seq_num + 1) % len(sequencer.seqs)
                 sequencer.seq_num = seq_num
                 tb_disp.update_seq( seqs, seq_num )
