@@ -160,7 +160,7 @@ class TBishSynth:
         if slide:
             glide_time = 0.1
             # FIXME also do appropriate other actions for slide
-        envdecay = max(0.05, self.secs_per_step * self.decay * 1.5)  # FIXME: 1.5 fudge 
+        envdecay = max(0.05, self.secs_per_step * self.decay * 2.5)  # FIXME: explain 2.5 fudge 
         frate = 1 / envdecay
         self.filt_env.offset = ((1-envmod) * cutoff) 
         self.filt_env.scale = cutoff - self.filt_env.offset
@@ -172,7 +172,7 @@ class TBishSynth:
                                   attack_level = attack_level,
                                   decay_time = envdecay,
                                   sustain_level=0,
-                                  release_time=0.01) 
+                                  release_time=envdecay) 
         self.note = synthio.Note(synthio.midi_to_hz(midi_note+self.transpose),
                                  bend = self.glider.lerp,
                                  filter = self.filter,
