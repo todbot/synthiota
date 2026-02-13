@@ -1,4 +1,5 @@
 
+import array
 import board
 import digitalio
 import analogio
@@ -76,7 +77,7 @@ i2c = busio.I2C(scl=scl_pin, sda=sda_pin, frequency=400_000)
 mpr121s = [adafruit_mpr121.MPR121(i2c, address=a) for a in mpr121_addrs]
 # fix little buttons up top? 
 #mpr121s[1]._write_register_byte(adafruit_mpr121.MPR121_CONFIG1, 0x20)  # default, 2*16uA charge current? 
-mpr121s[1]._write_register_byte(adafruit_mpr121.MPR121_CONFIG1, 0x05)  # default, 2*16uA charge current? 
+mpr121s[1]._write_register_byte(adafruit_mpr121.MPR121_CONFIG1, 0x10)  # 
 
 displayio.release_displays()
 spi = busio.SPI(clock=disp_sclk, MOSI=disp_mosi)
@@ -93,24 +94,41 @@ touched = [0] * num_pads
 last_touched = [0] * num_pads
 
 pot = analogio.AnalogIn(pot_pin)
-pot_vals = [0] * num_pots
-pot_sels = []
+pot_vals = array.array('H', [0] * num_pots)  # AnalogIn is always 16-bit
+#pot_vals = [0] * num_pots
+pot_sels = []   # digitalinout pins controlling analog mux hooked to pots
+
 for p in pot_sel_pins:
     pot_sel = digitalio.DigitalInOut(p)
     pot_sel.switch_to_output(value=False)
     pot_sels.append(pot_sel)
    
 def select_pot(n):
+    """Set the analog mux to a particular pot channel"""
     for b in range(3):
         pot_sels[b].value = n & (1<<b) != 0
         
-def update_pots():
+def update_pots_nosmooth():
+    """Read all the pots via the mux. No smoothing is done."""
     for i in range(num_pots):
         select_pot(i)
         pot_vals[i] = pot.value
     return pot_vals
 
+smooth_shift = 3
+def update_pots():
+    """Read all the pots via the mux. Smoothing is done via integer exponential moving average."""
+    for i in range(num_pots):
+        select_pot(i)
+        raw = pot.value
+        pot_vals[i] += (raw - pot_vals[i]) >> smooth_shift  # integer EMA
+    return pot_vals
+
+for i in range(50):
+    update_pots()   # prime the accumulators
+
 def get_touched():
+    """Read all touchpads return list of booleans."""
     touched0 = mpr121s[0].touched_pins
     touched1 = mpr121s[1].touched_pins
     touched = touched0 + touched1
