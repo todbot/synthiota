@@ -4,7 +4,10 @@
 `code.py`
 ================================================================================
 
-This is the main code.py for a TB-like synth
+This is the main code.py for a TB-like synth.
+
+The UI has two "pages': Play and Edit.
+
 
 8 Feb 2026 - @todbot / Tod Kurt
 

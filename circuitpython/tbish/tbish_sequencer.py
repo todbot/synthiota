@@ -104,13 +104,12 @@ class TBishSequencer:
             if midi_note != 0:    # midi_note == 0 = rest
                 midi_note += self.transpose
                 self.tb.secs_per_step = self._secs_per_step * 1.0
-                #self.tb.note_on(midi_note, vel)
-                self.tb.note_on_step(midi_note, vel, slide)
+                self.tb.note_on_step(midi_note, vel>100, slide)
                 self.gate_off_time = time.monotonic() + self._secs_per_step * self.gate_amount
 
             self.i = (i+1) % seq_len
             self.midi_note = midi_note
         
-            print("tbish_seq: step %d note: %d vel:%3d" % (i, midi_note, vel),
+            print("seq: step %d note: %d vel:%3d" % (i, midi_note, vel),
                   int(self._secs_per_step*1000), int(dt*1000))
 
