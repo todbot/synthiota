@@ -1,3 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Tod Kurt
+# SPDX-License-Identifier: MIT
+"""
+`synthiota_synth_setup.py`
+================================================================================
+
+Create the objects representing the hardware and provide utilty functions
+for the synthiota board. 
+
+2025-2026 - @todbot / Tod Kurt
+
+"""
 
 import array
 import board
@@ -43,11 +55,11 @@ SAMPLE_RATE = 22050
 CHANNEL_COUNT = 2
 BUFFER_SIZE = 4096
 
-dw, dh = 132,64 
+dw, dh = 132,64
 mpr121_addrs = (0x5a, 0x5b)
-num_leds = 8 * 3 + 3
-num_pots = 8
-num_pads = 8 * 3
+num_leds = const(8 * 3 + 3)
+num_pots = const(8)
+num_pads = const(8 * 3)
 
 # hook up external stereo I2S audio DAC board
 audio = audiobusio.I2SOut(bit_clock=i2s_bck_pin, word_select=i2s_lck_pin, data=i2s_dat_pin)
@@ -74,11 +86,11 @@ uart = busio.UART(rx=uart_rx_pin, tx=uart_tx_pin, baudrate=31250, timeout=0.001)
 
 # i2c for MPR121 touch sensors
 i2c = busio.I2C(scl=scl_pin, sda=sda_pin, frequency=400_000)
-mpr121s = [adafruit_mpr121.MPR121(i2c, address=a) for a in mpr121_addrs]
-# fix little buttons up top? 
-#mpr121s[1]._write_register_byte(adafruit_mpr121.MPR121_CONFIG1, 0x20)  # default, 2*16uA charge current? 
-mpr121s[1]._write_register_byte(adafruit_mpr121.MPR121_CONFIG1, 0x10)  # 
+mpr121s = tuple([adafruit_mpr121.MPR121(i2c, address=a) for a in mpr121_addrs])
+# fix little buttons up top by changing gain on top MPR121 
+mpr121s[1]._write_register_byte(adafruit_mpr121.MPR121_CONFIG1, 0x10)  # # 0x20 default, 2*16uA charge current?  
 
+# display
 displayio.release_displays()
 spi = busio.SPI(clock=disp_sclk, MOSI=disp_mosi)
 display_bus = fourwire.FourWire(spi, command = disp_dc, reset=disp_res, baudrate=24_000_000)
@@ -94,31 +106,32 @@ touched = [0] * num_pads
 last_touched = [0] * num_pads
 
 pot = analogio.AnalogIn(pot_pin)
-pot_vals = array.array('H', [0] * num_pots)  # AnalogIn is always 16-bit
-#pot_vals = [0] * num_pots
-pot_sels = []   # digitalinout pins controlling analog mux hooked to pots
+pot_vals = array.array('H', [0] * num_pots)  # holds analog reads, AnalogIn is always 16-bit
+_pot_sels = []   # digitalinout pins controlling analog mux hooked to pots
+_pot_indices = tuple(range(num_pots))  # cache the range
 
 for p in pot_sel_pins:
     pot_sel = digitalio.DigitalInOut(p)
     pot_sel.switch_to_output(value=False)
-    pot_sels.append(pot_sel)
+    _pot_sels.append(pot_sel)
    
 def select_pot(n):
     """Set the analog mux to a particular pot channel"""
-    for b in range(3):
-        pot_sels[b].value = n & (1<<b) != 0
-        
+    _pot_sels[0].value = n & 1
+    _pot_sels[1].value = n & 2
+    _pot_sels[2].value = n & 4
+
 def update_pots_nosmooth():
     """Read all the pots via the mux. No smoothing is done."""
-    for i in range(num_pots):
+    for i in _pot_indices:
         select_pot(i)
         pot_vals[i] = pot.value
     return pot_vals
 
-smooth_shift = 3
+smooth_shift = const(3)
 def update_pots():
     """Read all the pots via the mux. Smoothing is done via integer exponential moving average."""
-    for i in range(num_pots):
+    for i in _pot_indices:
         select_pot(i)
         raw = pot.value
         pot_vals[i] += (raw - pot_vals[i]) >> smooth_shift  # integer EMA
@@ -151,6 +164,7 @@ def get_touch_events():
 
       
 class Pads:
+    """ Useful mappings for how the touchpad indexes map to LEDs """
     # map touch id to led index
     PAD_TO_LED = (7,6,5,4,3,2,1,0, 8,9,10,11, 18,17,16,15, 23,22,21, 20, 19, 12,13,14)
 
@@ -159,19 +173,19 @@ class Pads:
     
     # pad defs
     PAD_OCT_DOWN = const(19)
-    PAD_OCT_UP = 20
+    PAD_OCT_UP = const(20)
     
-    PAD_RSLIDE_C = 14
-    PAD_RSLIDE_B = 13
-    PAD_RSLIDE_A = 12
+    PAD_RSLIDE_C = const(14)
+    PAD_RSLIDE_B = const(13)
+    PAD_RSLIDE_A = const(12)
     
-    PAD_LSLIDE_C = 21
-    PAD_LSLIDE_B = 22
-    PAD_LSLIDE_A = 23
+    PAD_LSLIDE_C = const(21)
+    PAD_LSLIDE_B = const(22)
+    PAD_LSLIDE_A = const(23)
 
     # hmm need a better place for this
-    LED_EDIT =  24
-    LED_MODE =  25
-    LED_PLAY =  26
+    LED_EDIT =  const(24)
+    LED_MODE =  const(25)
+    LED_PLAY =  const(26)
     
 

@@ -14,10 +14,11 @@ import microcontroller
 microcontroller.cpu.frequency = 200_000_000
 
 import time, random, gc
+from micropython import const
 import ulab.numpy as np
 import rainbowio
 import synthio
-from synth_setup_synthiota import (display, leds, uart, mpr121s,
+from synthiota_synth_setup import (display, leds, uart, mpr121s,
                                    update_pots, encoder, encoder_sw, get_touch_events,
                                    mixer, Pads)
 
@@ -35,20 +36,25 @@ tbsynth = TBishSynth(mixer.sample_rate, mixer.channel_count)
 mixer.voice[0].play(tbsynth.audio_out)
 
 seqs = [
-    [[24, 36, 48, 36,  48, 48+7, 36, 48],  # notes, 0 = rest
-     [127, 80, 80, 80,  127, 1, 30, 1]],   # vels, 1=slide, 127=accent
+    [[24,  36, 48, 36,  48, 48+7, 36, 48],    # notes: midi notenum
+     [127, 80, 80, 80,  127,  80, 80, 80],    # vels: 100+ = accent, 
+     [0,    0,  0,  0,   0,   1,  0,  1]],    # slides: 1 = slide
+        
+    [[36,   0,   0,  0,  24,    0,   0,  0],  # notes, 0 = rest
+     [127, 80,  80, 80,  127 , 80, 127, 80],  
+     [0,    1,   1,  0,   0,    1,   0,  1]], # slides: 1 = slide
     
-    [[36, 48, 36, 48,  36, 48, 36, 48],  # notes, 0 = rest
-     [127, 80, 1, 1,  127, 1, 30, 1]],   # vels, 1=slide, 127=accent
+    [[36,  48, 36, 48,  36,  48, 36, 48],  # notes, 0 = rest
+     [127, 80, 80, 80,  127, 80, 80, 80],  # vels 100+ = accent
+     [0,    0,  1,  1,   0,   1,  0,  1]], # slides: 1 = slide
     
-    [[34, 36, 34, 36,  48, 48, 36, 48],    # notes, 0 = rest
-     [127, 80, 120, 80,  127, 11, 127, 80]],  # vels 127=accent
+    [[34, 36, 34, 36,  48, 48, 36, 48],      # notes, 0 = rest
+     [127, 80, 127, 80,  127, 80, 127, 80],  # vels 100+ = accent
+     [0,    0,  0,  0,   0,   0,  0,  0]],   # slides: 1 = slide
     
-    [[36, 36-12, 36, 36+12,  36, 0, 36, 0],    # notes, 0 = rest
-     [127,  1,   1, 80,  127, 80, 127, 80]],  # vels 127=accent
-    
-    [[36, 36+12, 0, 0,  36-12, 36, 36, 0],    # notes, 0 = rest
-     [127,  1,   1, 80,  127, 80, 127, 80]],  # vels 127=accent  
+    [[36,  24,  36, 48,  36, 0, 36, 0],     # notes, 0 = rest
+     [127, 80, 80, 80,  127, 80, 127, 80],  # vels 100+ = accent
+     [0,    1,  1,  0,   0,   0,  0,  0]],  # slides: 1 = slide
 ]
 
 myconfig = [
@@ -58,7 +64,7 @@ myconfig = [
         Parameter(0.5, 4.0, "ResQ", callback=tbsynth.set_resonance),
         Parameter(0.0, 1.0, "Decay", callback=tbsynth.set_decay),
         Parameter(0.0, 1.0, "Accent", callback=tbsynth.set_accent),
-        Parameter(0,   3,   "Wave", options=["0SQU", "1SAW", "2SW2", "3SW3"], callback=tbsynth.set_wavenum),
+        Parameter(0,   3,   "Wave", options=["SQU", "SAW", "SW2", "SW3"], callback=tbsynth.set_wavenum),
         Parameter(0.0, 1.0, "Drive", callback=tbsynth.set_drive_mix),
         Parameter(0.0, 1.0, "Delay", callback=tbsynth.set_delay_mix),
     ],
@@ -72,10 +78,23 @@ myconfig = [
         Parameter(24, 72, 'step6'),
         Parameter(24, 72, 'step7'),
     ],   
+    [
+        Parameter(30, 180, "BPM"),
+        Parameter(0, len(seqs)-1, "SeqNum"),
+        Parameter(-2, +3, "Transpose"),
+        Parameter(0.0, 1.0, "DelaylTime"),
+        Parameter(0.0, 1.0, "DriveGain"),
+        
+        Parameter(0.0, 1.0, "DriveGain"),
+        Parameter(0.0, 1.0, "DriveGain"),
+        Parameter(0.0, 1.0, "DriveGain"),
+        Parameter(0.0, 1.0, "DriveGain"),
+    ],
 ]
 
 potctrl = MappedPotController(myconfig, mode=MappedPotController.MODE_RELATIVE)
-potctrl.load_preset(0, [2345, 0.5,  1.5, 0.75,   0.2, 0.0,  0.0, 0.0])
+# this loads a "patch" 
+potctrl.load_preset(0, [2345, 0.5,  1.5, 0.5,   0.2, 0.0,  0.0, 0.0])
 potctrl.load_preset(1, seqs[0][0] )
 
 tbsynth.drive = 1.0
@@ -107,46 +126,54 @@ print("="*80)
 print("secs_per_step:%.3f" % sequencer._secs_per_step)
 print("mem_free:", gc.mem_free())
 
+#_pot_indices = tuple(range(8))  # cache the range
+dim_by = const(3)
+transpose = 0
+transpose_oct = 0
+
 #disp_mode = 1  # note edit
 disp_mode = 0  # performing
 
 tb_disp.show_mode(disp_mode)
-dim_by = 2
 
-transpose = 0
-transpose_oct = 0
+
 while True:
 
     sequencer.update()
 
     # handle LEDs
-    #               (fixme: use np to speed this fade up)
     leds[:] = [[max(i-dim_by,0) for i in l] for l in leds] # dim all by (dim_by,dim_by,dim_by)
+    #               (fixme: use np to speed this fade up)
 
     if disp_mode == 0:  # PLAY mode
         if not sequencer.playing:
             leds[Pads.LED_PLAY] = 0x333333
-    if disp_mode == 1:  # EDIT sequence mode
-        leds[Pads.LED_EDIT] = 0x333333
-        for i in range(8):
-            v = seqs[sequencer.seq_num][1][i]
-            c = 0x333333
-            if v == 127:
-                c = 0xff3333
-            elif v == 1:
-                c = 0x000033
-            leds[Pads.PAD_TO_LED[i]] = c
 
-    leds.show()
+    elif disp_mode == 1:  # EDIT sequence mode
+        leds[Pads.LED_EDIT] = 0x333333
+        seq = seqs[sequencer.seq_num]
+        for i in range(8):
+            note  = seq[0][i]
+            vel   = seq[1][i]
+            slide = seq[2][i]
+            if slide and vel > 100:
+                leds[i+8] = 0x330033
+            elif slide:
+                leds[i+8] = 0x000033
+            elif vel > 100: 
+                leds[i+8] = 0x330000
+            leds[i] = 0x333333 if note > 0 else 0  # show note on or muted
+                       
+    leds.show()    # auto-write is off, so we must explicitly show
     
     # handle pots
-    raw_potvals = update_pots()
-    pot_changes = potctrl.update(raw_potvals)
-    current_params = potctrl.values
+    raw_potvals = update_pots()  # get real pot values (smoothed)
+    pot_changes = potctrl.update(raw_potvals)  # detect changes w/ hysteresis
+    current_params = potctrl.values  # get mapped real values
     
     if pot_changes:
         #print("%02x" % pot_changes, current_params, time.monotonic())
-        bank_idx = potctrl.current_bank  
+        bank_idx = potctrl.current_bank
         if bank_idx == 0:  # synth params
             labelL, labelR = None,None
             for i in range(8):
@@ -157,6 +184,7 @@ while True:
                     labelR, textR = potctrl.get_display_data(j+1)
                     tb_disp.curr_param_pair = j
                     tb_disp.update_param_pairs(labelL, textL, labelR, textR)
+
         elif bank_idx == 1:   # note steps
             for i in range(8):
                 if (pot_changes >> i) & 1:
@@ -164,6 +192,9 @@ while True:
                     print("note:", i, notenum, sequencer.seq_num)
                     seqs[sequencer.seq_num][0][i] = notenum
                     tb_disp.update_seq_step(i, notenum, 100)
+
+        elif bank_idx == 2:   # secondary parameters
+            pass
 
     # handle encoder
     delta_pos = last_encoder_pos - encoder.position 
@@ -181,7 +212,6 @@ while True:
             sequencer.stop()
             # testing out save/load params
             #s = ParamSet.dump(param_set)  # dump patch to string as JSON
-            #print(s)
             #ParamSet.load(s)   # load patch in as JSON
         else:
             sequencer.start()
@@ -202,26 +232,64 @@ while True:
                         tb_disp.update_transpose(sequencer.transpose)
                     else:
                         tbsynth.note_on(36 + n + transpose_oct*12)  # note_off automatically haappens
-                else:  # sequence edit mode
-                    pass
+                elif disp_mode == 1: # sequence edit mode
+                    seq = seqs[sequencer.seq_num]
+                    if n < 8:  # lower pads: step on -> accent -> mute
+                        note  = seq[0][n]
+                        vel   = seq[1][n]
+                        if note > 0:
+                            note = 0
+                        else:
+                            note = potctrl.values[n]
+                            vel = 80
+                        seq[0][n] = note 
+                        seq[1][n] = vel
+                    elif n < 16:
+                        n = n - 8  # get to sequence range
+                        vel   = seq[1][n]
+                        slide = seq[2][n]
+                        print(vel,slide)
+                        # four states: normal note -> accent -> slide -> slide+accent -> norm
+                        if vel <= 100 and slide == 0:  # no accent + no slide; go to
+                            vel = 127   # accent 
+                            slide = 0   # no slide
+                        elif vel > 100 and slide == 0: # accent + no slide; go to 
+                            vel = 80    # no accent
+                            slide = 1   # slide
+                        elif vel <= 100 and slide == 1: # no accent + slide; go to
+                            vel = 127   # accent 
+                            slide = 1   # slide
+                        else:
+                            vel = 80    # no accent 
+                            slide = 0   # no slide
+                        seq[1][n] = vel
+                        seq[2][n] = slide
+                        print(vel, slide, seq)
+                        
+                tb_disp.update_seq(seqs, sequencer.seq_num)
+                        
                     
             elif i == Pads.PAD_OCT_UP:
                 transpose_oct = min(transpose_oct+1, 3)
                 sequencer.transpose = transpose + transpose_oct*12
                 tb_disp.update_transpose(sequencer.transpose)
+                
             elif i == Pads.PAD_OCT_DOWN:
                 transpose_oct = max(transpose_oct-1, -2)
                 sequencer.transpose = transpose + transpose_oct*12                
                 tb_disp.update_transpose(sequencer.transpose)
+                
             elif i == Pads.PAD_RSLIDE_C:  # change sequence on top-right pad press
                 seq_num = (sequencer.seq_num + 1) % len(sequencer.seqs)
                 sequencer.seq_num = seq_num
                 tb_disp.update_seq( seqs, seq_num )
                 print("** changing sequence!", seq_num)
+                
             elif i == Pads.PAD_LSLIDE_A:   # left slider, left edge
                 bpm -= 1
                 sequencer.bpm = bpm
                 tb_disp.update_bpm(bpm)
+                
             elif i == Pads.PAD_LSLIDE_C:   # left slider, right edge
                 bpm += 1
                 sequencer.bpm = bpm

@@ -142,9 +142,9 @@ class TBishSynth:
         self.fx_filter1.play(self.synth)   # plug synth into 1st filter
         return self.fx_delay   # the "audio output" of this synth
 
-    def note_on_step(self, midi_note, slide=False, accent=False):
+    def note_on_step(self, midi_note, accent=False, slide=False):
         """Trigger a note, with slide and accent"""
-        print("note_on_step: %3d %1d %1d" % (midi_note, slide, accent))
+        print("note_on_step: %3d ac:%1d sl:%1d" % (midi_note, accent, slide))
         self.note_off(midi_note) # must do when in step mode
         attack_level = 0.8
         cutoff = self.cutoff
@@ -181,9 +181,9 @@ class TBishSynth:
         self.synth.press(self.note)
         
 
-    def note_on(self, midi_note, vel=100):
+    def note_on(self, midi_note, vel=80):
         """For MIDI use"""
-        self.note_on_step(midi_note, slide=(vel==1), accent=(vel==127))
+        self.note_on_step(midi_note, slide=(vel==1), accent=(vel>100))
 
     def note_off(self, midi_note, vel=0):
         """Used for both MIDI and sequencer mode, passed in args are not used."""
