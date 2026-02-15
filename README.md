@@ -9,6 +9,11 @@ https://github.com/user-attachments/assets/1fe45b23-2a2a-41f4-9afe-203840c703e8
 
 <img src="./docs/synthiota1_pcb_render1.jpg" width=500>
 
+## Video demos:
+
+- "tbish" TB-303 like synth, demo2: https://youtu.be/MjE2wdevc3M
+- "tbish" TB-303 like synth, demo1: https://youtu.be/O4a5pk78DVM
+
 
 # Assembling
 
