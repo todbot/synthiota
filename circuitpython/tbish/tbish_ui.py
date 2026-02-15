@@ -4,6 +4,7 @@ import displayio
 import vectorio
 import terminalio
 from adafruit_display_text import bitmap_label as label
+
 fnt = terminalio.FONT
 cw = 0xFFFFFF
 
@@ -26,13 +27,21 @@ class TBishUI(displayio.Group):
        
         # Elements on all pages
         
+        bpmlabellabel = label.Label(fnt, text="bpm", color=cw, x=0+1, y=58)
+        self.bpmlabel = label.Label(fnt, text="123", color=cw, x=0+21, y=58)
+        spblabellabel = label.Label(fnt, text="/", color=cw, x=0+38, y=58)
+        self.spblabel = label.Label(fnt, text="4", color=cw, x=0+44, y=58)
+        
         self.translabel = label.Label(fnt, text="+12", color=cw, x=58, y=58)
         self.modelabel = label.Label(fnt, text="mode", color=cw, x=80, y=58)
         self.seqlabel = label.Label(fnt, text="0", color=cw, x=110, y=58)
-        self.stepspot =  vectorio.Rectangle(pixel_shader=palette, width=10, height=4, x=5, y=38)
-        logo = label.Label(fnt, text="TBish", color=cw, x=0, y=60)
-        for l in (self.modelabel, self.seqlabel, self.translabel, self.stepspot, logo):
+        self.stepspot =  vectorio.Rectangle(pixel_shader=palette, width=10, height=4, x=5, y=48)
+        logo = label.Label(fnt, text="TBish", color=cw, x=40, y=10)
+        
+        for l in (self.bpmlabel, bpmlabellabel, self.spblabel, spblabellabel, self.modelabel,
+                  self.seqlabel, self.translabel, self.stepspot, logo):
             self.append(l)
+
                 
         # Play group UI elements
         
@@ -40,34 +49,35 @@ class TBishUI(displayio.Group):
         self.curr_param_pair = 0
         
         # text of the currently editable parameters
-        self.textA = label.Label(fnt, text="tA", color=cw, x=1, y=24, scale=2)
-        self.textB = label.Label(fnt, text="tB", color=cw, x=75, y=24, scale=2)
+        self.textA = label.Label(fnt, text="tA", color=cw, x=1, y=36, scale=2)
+        self.textB = label.Label(fnt, text="tB", color=cw, x=75, y=36, scale=2)
 
         # labels for the currently editable parameters
-        self.labelA = label.Label(fnt, text="lablA", color=cw, x=1, y=8)
-        self.labelB = label.Label(fnt, text="lablB", color=cw, x=75, y=8)
+        self.labelA = label.Label(fnt, text="lablA", color=cw, x=1, y=20)
+        self.labelB = label.Label(fnt, text="lablB", color=cw, x=75, y=20)
         
         #rect = vectorio.Rectangle(pixel_shader=palette, width=64, height=1, x=32, y=1)
-        self.paramspot = vectorio.Rectangle(pixel_shader=palette, width=4, height=4, x=32, y=5)
-        self.playGroup.append(self.paramspot)
+        #self.paramspot = vectorio.Rectangle(pixel_shader=palette, width=4, height=4, x=32, y=5)
+        #self.playGroup.append(self.paramspot)
         
         for l in (self.textA, self.textB, self.labelA, self.labelB):
             self.playGroup.append(l)
 
         # Edit group UI elements
         
-        bpmlabellabel = label.Label(fnt, text="bpm:", color=cw, x=1, y=8)
-        self.bpmlabel = label.Label(fnt, text="123", color=cw, x=23, y=8)
         self.notelabels = displayio.Group()
+        self.octlabels = displayio.Group()
         self.accentlabels = displayio.Group()
-        for l in (self.notelabels, self.accentlabels, self.bpmlabel, bpmlabellabel):
+        for l in (self.notelabels, self.octlabels, self.accentlabels):
             self.editGroup.append(l)
             
         for i in range(8):
-            al = label.Label(fnt, text="", color=cw, x=5+i+15, y=25)
-            l = label.Label(fnt, text="34", color=cw, x=5+i*15, y=30)
-            self.notelabels.append(l)
-            self.accentlabels.append(al)
+            #al = label.Label(fnt, text=".", color=cw, x=5+i+15, y=20)
+            nl = label.Label(fnt, text="C#", color=cw, x=5+i*15, y=30)
+            ol = label.Label(fnt, text="3", color=cw, x=10+i*15, y=38)
+            #self.accentlabels.append(al)
+            self.notelabels.append(nl)
+            self.octlabels.append(ol)
 
         self.display.refresh()
 
@@ -83,13 +93,22 @@ class TBishUI(displayio.Group):
     def update_transpose(self, t):
         self.translabel.text = "%+2d" % t
 
+    def update_steps_per_beat(self, s):
+        self.spblabel.text = str(s)        
+
     def update_seq(self, seqs, seqnum):
         self.seqlabel.text = "%2d" % seqnum
         for i in range(8):
-            self.notelabels[i].text = "%2d" % seqs[seqnum][0][i]
+            self.update_seq_step(i, seqs[seqnum][0][i])
 
     def update_seq_step(self, i, notenum, vel=100):
-        self.notelabels[i].text = "%2d" % notenum
+        names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        if notenum > 0:
+            notest, octst = names[notenum%12], str(notenum//12) # e.g. "C#3"
+        else:
+            notest,octst = "", ""
+        self.notelabels[i].text = notest
+        self.octlabels[i].text = octst
             
     def show_mode(self, mode):
         if mode == 0:
@@ -110,7 +129,7 @@ class TBishUI(displayio.Group):
         self.textB.text = textB
         
     def update_param_pairs(self, labelA, textA, labelB, textB):
-        self.paramspot.x = 45 + 4*(self.curr_param_pair)
+        #self.paramspot.x = 45 + 4*(self.curr_param_pair)
 
         self.labelA.text = labelA
         self.textA.text = textA

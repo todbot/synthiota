@@ -35,15 +35,17 @@ from tbish_ui import TBishUI
 bpm = 120
 steps_per_beat = 4   # 4 = 16th note, 2 = 8th note, 1 = quarter note
 
+steps_per_beat_allowed = [1, 2, 4, 8, 16]
+
 tbsynth = TBishSynth(mixer.sample_rate, mixer.channel_count)
 mixer.voice[0].play(tbsynth.audio_out)
 
 seqs = [
     [[24,  36, 48, 36,  48, 48+7, 36, 48],    # notes: midi notenum
      [127, 80, 80, 80,  127,  80, 80, 80],    # vels: 100+ = accent, 
-     [0,    0,  0,  0,   0,   1,  0,  1]],    # slides: 1 = slide
+     [0,    0,  0,  0,   0,   1,  0,  1]],    # slide/rest: 0 = normal, 1 = slide
         
-    [[36,   0,   0,  0,  24,    0,   0,  0],  # notes, 0 = rest
+    [[36,   0,   0,  0,  24,    0,   0,  0],  # notes, 0 = rest 
      [127, 80,  80, 80,  127 , 80, 127, 80],  
      [0,    1,   1,  0,   0,    1,   0,  1]], # slides: 1 = slide
     
@@ -51,7 +53,7 @@ seqs = [
      [127, 80, 80, 80,  127, 80, 80, 80],  # vels 100+ = accent
      [0,    0,  1,  1,   0,   1,  0,  1]], # slides: 1 = slide
     
-    [[34, 36, 34, 36,  48, 48, 36, 48],      # notes, 0 = rest
+    [[36, 36, 34, 36,  48, 48, 36, 48],      # notes, 0 = rest
      [127, 80, 127, 80,  127, 80, 127, 80],  # vels 100+ = accent
      [0,    0,  0,  0,   0,   0,  0,  0]],   # slides: 1 = slide
     
@@ -82,15 +84,15 @@ myconfig = [
         Parameter(24, 72, 'step7'),
     ],   
     [
-        Parameter(30, 180, "BPM"),
+        Parameter(30, 180, "BPM"),   # some ideas, not implemented
         Parameter(0, len(seqs)-1, "SeqNum"),
         Parameter(-2, +3, "Transpose"),
         Parameter(0.0, 1.0, "DelaylTime"),
         Parameter(0.0, 1.0, "DriveGain"),
         
-        Parameter(0.0, 1.0, "DriveGain"),
-        Parameter(0.0, 1.0, "DriveGain"),
-        Parameter(0.0, 1.0, "DriveGain"),
+        Parameter(0.0, 1, "AutoSlide"),
+        Parameter(0.0, 1.0, "AmpEnvAttack"),
+        Parameter(0.0, 1.0, "FiltEnvAttack"),
         Parameter(0.0, 1.0, "DriveGain"),
     ],
 ]
@@ -134,20 +136,25 @@ dim_by = const(3)
 transpose = 0
 transpose_oct = 0
 
-#disp_mode = 1  # note edit
-disp_mode = 0  # performing
+bpm_pad_held = False  # bpm button held (twist encoder to change BPM)
+spb_pad_held = False  # steps per beat button held  (encoder to change SPB)
+
+#disp_mode = 2  # knobs: 2ndary parameters  (not yet implemented)
+#disp_mode = 1  # knbos: note edit
+disp_mode = 0   # knobs: synth params
 
 tb_disp.show_mode(disp_mode)
-
 
 while True:
 
     sequencer.update()
 
-    # handle LEDs
+    # fade LEDs  (e.g. default state is off for all LEDs)
     leds[:] = [[max(i-dim_by,0) for i in l] for l in leds] # dim all by (dim_by,dim_by,dim_by)
     #               (fixme: use np to speed this fade up)
 
+    # ------------------------------------------------------------------------
+    # handle LEDs
     if disp_mode == 0:  # PLAY mode
         if not sequencer.playing:
             leds[Pads.LED_PLAY] = 0x333333
@@ -166,9 +173,15 @@ while True:
             elif vel > 100: 
                 leds[i+8] = 0x330000
             leds[i] = 0x333333 if note > 0 else 0  # show note on or muted
-                       
+
+    if bpm_pad_held:
+        leds[16] = 0x333333  # FIXME
+    if spb_pad_held:
+        leds[16] = 0x333333  # FIXME
+        
     leds.show()    # auto-write is off, so we must explicitly show
-    
+
+    # ------------------------------------------------------------------------
     # handle pots
     raw_potvals = update_pots()  # get real pot values (smoothed)
     pot_changes = potctrl.update(raw_potvals)  # detect changes w/ hysteresis
@@ -199,30 +212,52 @@ while True:
         elif bank_idx == 2:   # secondary parameters
             pass
 
+    # ------------------------------------------------------------------------
     # handle encoder
     delta_pos = last_encoder_pos - encoder.position 
     last_encoder_pos = encoder.position
     if delta_pos:
-        disp_mode = (disp_mode + 1) % 2
-        print("delta pos:", delta_pos, disp_mode)
-        tb_disp.show_mode(disp_mode)
-        potctrl.switch_bank(disp_mode, raw_potvals)
+        if bpm_pad_held:     # change bpm with encoder
+            bpm += delta_pos
+            sequencer.bpm = bpm
+            tb_disp.update_bpm(bpm)
+        elif spb_pad_held:   # change steps per beat with encoder
+            spbi = steps_per_beat_allowed.index(steps_per_beat)
+            spbi += delta_pos
+            spbi = min(max(spbi, 0), len(steps_per_beat_allowed)-1)
+            steps_per_beat = steps_per_beat_allowed[spbi]
+            sequencer.steps_per_beat = steps_per_beat
+            tb_disp.update_steps_per_beat(steps_per_beat)            
+        else:
+            disp_mode = (disp_mode + 1) % 2
+            print("delta pos:", delta_pos, disp_mode)
+            tb_disp.show_mode(disp_mode)
+            potctrl.switch_bank(disp_mode, raw_potvals)
         
+    # ------------------------------------------------------------------------
     # handle encoder push switch
     key = encoder_sw.events.get()
     if key and key.pressed:
         if sequencer.playing:
             sequencer.stop()
+            print("seqs:\n",seqs)  # this is how we "save" sequences currently ahah
             # testing out save/load params
             #s = ParamSet.dump(param_set)  # dump patch to string as JSON
             #ParamSet.load(s)   # load patch in as JSON
         else:
             sequencer.start()
 
+    # ------------------------------------------------------------------------
     # handle touchpads
     touch_events = get_touch_events()
     for touch in touch_events:
         i = touch.key_number
+        if touch.released:
+            if i == Pads.PAD_LSLIDE_A:   # left slider, left edge
+                bpm_pad_held = False
+            elif i == Pads.PAD_LSLIDE_C:   # left slider, right edge
+                spb_pad_held = False
+                
         if touch.pressed:
             n = Pads.PAD_TO_LED.index(i)
             leds[n] = rainbowio.colorwheel(time.monotonic()*50)
@@ -289,12 +324,7 @@ while True:
                 print("** changing sequence!", seq_num)
                 
             elif i == Pads.PAD_LSLIDE_A:   # left slider, left edge
-                bpm -= 1
-                sequencer.bpm = bpm
-                tb_disp.update_bpm(bpm)
+                bpm_pad_held = True
                 
             elif i == Pads.PAD_LSLIDE_C:   # left slider, right edge
-                bpm += 1
-                sequencer.bpm = bpm
-                tb_disp.update_bpm(bpm)
-
+                spb_pad_held = True

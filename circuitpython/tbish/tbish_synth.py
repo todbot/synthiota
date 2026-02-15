@@ -183,7 +183,7 @@ class TBishSynth:
 
     def note_on(self, midi_note, vel=80, slide=False):
         """For MIDI use"""
-        self.note_on_step(midi_note, vel, slide)
+        self.note_on_step(midi_note, vel>100, slide) 
 
     def note_off(self, midi_note, vel=0):
         """Used for both MIDI and sequencer mode, passed in args are not used."""
