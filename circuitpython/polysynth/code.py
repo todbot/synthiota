@@ -24,7 +24,7 @@ import tmidi
 import relic_synthiota
 from synthiota_potpage_ui import PotPageUI
 from synthtools import Patch, SubtractiveSynth
-from paramset import Param, ParamSet  # vendored: see lib/paramset.py
+from synthtools.paramset import Param, ParamSet
 
 SAMPLE_RATE = 44100  # set to 22050 here if audio glitches
 

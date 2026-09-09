@@ -1,7 +1,8 @@
-# polysynth
+# polysynth for synthiota
 
 A playable two-oscillator subtractive polysynth for Synthiota, on
-`synthtools`' `SubtractiveSynth`. Ported from pico_test_synth's
+`synthtools`' `SubtractiveSynth`. Ported from 
+[pico_test_synth](https://github.com/todbot/pico_test_synth)'s 
 `synthtools_polysynth`.
 
 The 16 step pads are a chromatic keyboard. The 8 pots edit 8 parameters
@@ -39,19 +40,16 @@ From `circuitpython/`:
 
     circup install -r requirements.txt
 
-That installs the third-party libraries plus the three local modules in
-`lib/` (`relic_synthiota.py`, `synthiota_potpage_ui.py`, `paramset.py`)
-onto the drive. Then copy the contents of this folder to the CIRCUITPY
-root.
+That installs the third-party libraries and the two local `lib/`
+modules (`relic_synthiota.py`, `synthiota_potpage_ui.py`). 
 
-`lib/paramset.py` is vendored from `synthtools` and shadows the copy in
-the bundled package: the released 0.5.1 `update_knobs_scale` is broken
-(a resting knob's value crawls toward the pot). Remove it once a
-`synthtools` release carries the fix.
+Copy to the CIRCUITPY root: the contents of this folder, plus
+`lib/synthtools/` and the two `lib/*.py` modules.
 
 `relic_synthiota.py` originates at
-github.com/relic-se/CircuitPython_Synthiota; `synthtools` is
-github.com/todbot/CircuitPython_SynthTools.
+github.com/relic-se/CircuitPython_Synthiota
+
+`synthtools` is at github.com/todbot/CircuitPython_SynthTools.
 
 ## Notes
 
