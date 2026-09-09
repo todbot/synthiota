@@ -5,5 +5,20 @@ adafruit_display_text
 adafruit_mpr121
 neopixel
 tmidi
-#lib/pico_test_synth
-#lib/synth_tools
+
+# pulled in by lib/relic_synthiota.py for its buttons
+adafruit_debouncer
+
+# NOT the bundle synthtools: the released 0.5.1 lacks the wavetable LFO
+# and synth.update(), and its update_knobs_scale is broken. The repo
+# ships a current build at lib/synthtools/*.mpy instead -- compiled from
+# github.com/todbot/CircuitPython_SynthTools with tools/build_synthtools_mpy.sh.
+# circup would overwrite it with 0.5.1, so synthtools is NOT listed here.
+#synthtools
+
+# lib/ modules copied to the device (not circup packages):
+#   relic_synthiota.py      -- github.com/relic-se/CircuitPython_Synthiota
+#   synthiota_potpage_ui.py -- the 8-pot two-up param screen
+#   synthtools/*.mpy        -- see the note above
+lib/synthiota_potpage_ui.py
+lib/relic_synthiota.py
