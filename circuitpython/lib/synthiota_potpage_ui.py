@@ -36,8 +36,8 @@ COL_X = (2, 68)
 VAL_MAXLEN = 5  # scale-2 chars that fit a 64px half
 
 SEC_X = 2
-POS_X = 64
-OCT_X = 104
+POS_X = 62
+OCT_X = 102  # right-side label, up to 5 chars (e.g. a key + octave "A#-2")
 
 
 class PotPageUI(displayio.Group):
@@ -87,7 +87,7 @@ class PotPageUI(displayio.Group):
 
         self.sec = label.Label(terminalio.FONT, text=" " * 8, color=0xFFFFFF, x=SEC_X, y=HEAD_Y)
         self.pos = label.Label(terminalio.FONT, text=" " * 3, color=0xFFFFFF, x=POS_X, y=HEAD_Y)
-        self.oct = label.Label(terminalio.FONT, text=" " * 3, color=0xFFFFFF, x=OCT_X, y=HEAD_Y)
+        self.oct = label.Label(terminalio.FONT, text=" " * 5, color=0xFFFFFF, x=OCT_X, y=HEAD_Y)
         for o in (self.sec, self.pos, self.oct):
             self.append(o)
         display.root_group = self
@@ -137,7 +137,7 @@ class PotPageUI(displayio.Group):
 
         if oct_name != self._seen_oct:
             self._seen_oct = oct_name
-            changed |= self._set(self.oct, "%-3s" % oct_name[:3])
+            changed |= self._set(self.oct, "%-5s" % oct_name[:5])
 
         self.dirty = self.dirty or changed
         return changed

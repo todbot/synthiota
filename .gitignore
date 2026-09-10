@@ -36,6 +36,7 @@ production-old
 fabrication-toolkit-options.json
 schematics/*/*zip
 
-# todspew
+# tod spew
 circuitpython/old
 circuitpython/bak
+#circuitpython/lib/synthtools

@@ -9,16 +9,19 @@ tmidi
 # pulled in by lib/relic_synthiota.py for its buttons
 adafruit_debouncer
 
-# NOT the bundle synthtools: the released 0.5.1 lacks the wavetable LFO
-# and synth.update(), and its update_knobs_scale is broken. The repo
-# ships a current build at lib/synthtools/*.mpy instead -- compiled from
-# github.com/todbot/CircuitPython_SynthTools with tools/build_synthtools_mpy.sh.
-# circup would overwrite it with 0.5.1, so synthtools is NOT listed here.
-#synthtools
+# github.com/todbot/CircuitPython_SynthTools -- the synth engine.
+# NOTE: needs a version newer than the current bundle release (0.5.1),
+# which lacks the wavetable LFO and synth.update() and has a broken
+# update_knobs_scale. Until a newer release lands, the needed .py source
+# is copied into lib/synthtools/ from a checkout of the repo; delete that
+# folder once `circup install synthtools` gives a new enough version.
+synthtools
 
 # lib/ modules copied to the device (not circup packages):
 #   relic_synthiota.py      -- github.com/relic-se/CircuitPython_Synthiota
 #   synthiota_potpage_ui.py -- the 8-pot two-up param screen
-#   synthtools/*.mpy        -- see the note above
+#   harmony.py              -- scales + chords; headed for synthtools.harmony
+#   synthtools/*.py         -- see the note above
 lib/synthiota_potpage_ui.py
 lib/relic_synthiota.py
+lib/harmony.py

@@ -10,9 +10,14 @@
 # only advances when synth.update() is called, which the main loop does
 # every pass; it is a cheap no-op while wlfo <= wpos.
 #
-# The 16 step pads are a chromatic keyboard; the 8 pots edit the 8 params
-# of the current page; the encoder turns pages (16 params over 2); up/down
-# change octave. HOLD the encoder button and tap step pad 1..9 to load
+# The 16 step pads are an 8x2 scale keyboard (see lib/harmony.py): the
+# BOTTOM row is the 8 scale degrees, one note each; the TOP row plays a
+# chord on the last bottom pad pressed -- root, oct, 5th, triad, 7th,
+# 9th, sus, spread, all diatonic so the quality follows the key.
+#
+# The 8 pots edit the 8 params of the current page; the encoder turns
+# pages (24 params over 3); up/down change octave. Scale and key are on
+# the KEY/MOD page. HOLD the encoder button and tap a bottom pad to load
 # that patch. USB and TRS MIDI play the synth; pad presses echo out both.
 #
 # Patches live in code only (default_patches()); there is no disk save.
@@ -29,6 +34,7 @@ import synthio
 import tmidi
 
 import relic_synthiota
+from harmony import NOTE_NAMES, Scale
 from synthiota_potpage_ui import PotPageUI
 from synthtools import Patch, WavetableSynth
 from synthtools.paramset import Param, ParamSet
@@ -38,8 +44,21 @@ SAMPLE_RATE = 44100  # set to 22050 here if audio glitches
 UI_INTERVAL = 0.05
 VELOCITY = 100
 WAVE_DIR = "/wavetables"
-OCTAVES = (-24, -12, 0, 12, 24)  # semitone offset added to a pad's base note
-BASE_NOTE = 45  # step 0, before the octave offset
+
+KEY_ROOT = 48  # MIDI note of scale degree 0 at key C, octave 0 (C3)
+OCT_STEPS = (-24, -12, 0, 12, 24)  # up/down button index this
+OCT_MID = 2  # OCT_STEPS index that means "no transpose"
+
+# the scales offered on the KEY/MOD page, with <=5-char screen labels;
+# harmony.SCALES has more (whole_tone, locrian, ...) for other callers
+SCALES_USED = ("major", "minor", "dorian", "mixolydian", "lydian", "phrygian",
+               "harmonic_minor", "melodic_minor", "major_pentatonic",
+               "minor_pentatonic", "blues", "chromatic")
+SCALE_LABELS = ("maj", "min", "dor", "mix", "lyd", "phr", "harm", "melo",
+                "maj5", "min5", "blues", "chr")
+
+# top-row pad -> harmony.DIATONIC_SHAPES key, left to right
+TOP_SHAPES = ("root", "oct", "5th", "triad", "7th", "9th", "sus", "spread")
 
 FILTER_TYPES = ("LPF", "HPF", "BPF", "NOTCH")
 
@@ -91,7 +110,7 @@ def default_patches():
 
 
 patches = default_patches()
-patch = patches[0]
+patch = patches[3]
 
 s = relic_synthiota.Synthiota(sample_rate=SAMPLE_RATE)
 # relic leaves both of these on; our redraw gating and single-show LED
@@ -106,6 +125,17 @@ s.mixer.voice[0].level = 0.6
 
 WavetableSynth.FILT_F_MAX = s.sample_rate * 0.45  # before constructing
 synth = WavetableSynth(sio, patch)
+
+# --- keyboard state --------------------------------------------------
+# defined before PARAMS: the "scale"/"key" param cases below read it.
+scale = Scale(root=KEY_ROOT, name="major")
+key = [0]           # 0..11 chromatic offset from C
+octave = OCT_MID    # index into OCT_STEPS; moved by the up/down buttons
+last_deg = [0]      # bottom pad last pressed; the top row builds chords on it
+
+
+def resync_root():
+    scale.root = KEY_ROOT + key[0] + OCT_STEPS[octave]
 
 
 def wave_idx():
@@ -134,13 +164,13 @@ def sync_wave_ranges():
             q.apply_to_obj(synth)
 
 
-# --- the 16 parameters, in page order --------------------------------
+# --- the 24 parameters, in page order --------------------------------
 # Order here IS the order on screen; PAGES slices it into knobsets of 8.
-# Seeded from, and written back to, the SYNTH, not the patch: synthtools
-# keeps a Patch inert, so the patch would show stale values.
-# Names are <= 5 chars, which is what a screen cell holds. "wsel"/"ftype"
-# and "vol" carry no objattr -- two are name-list INDEXES, one is the
-# mixer level; apply_param() / read_param() handle all three.
+# Seeded from, and written back to, the SYNTH, not the patch (synthtools
+# keeps a Patch inert), except scale/key which are app state.
+# Names are <= 5 chars, which is what a screen cell holds. The params
+# with no objattr (wsel, ftype, vol, scale, key, wshp, w1x) are
+# special-cased in apply_param() / read_param() / param_text().
 # fmt: off
 PARAMS = [
     # WAVE
@@ -150,7 +180,7 @@ PARAMS = [
     Param("wsel",  wave_idx(),           0,   len(WAVES) - 1, "%.0f", None),
     # wlfo is the ceiling wpos sweeps up to; <= wpos means no sweep (0 = off)
     Param("wlfo",  synth.wave_pos_max,   0,   wave_top(), "%1.2f", "wave_pos_max"),
-    Param("wrate", synth.wave_lfo_rate,  0.0, 8.0,   "%2.1f", "wave_lfo_rate"),
+    Param("wrate", synth.wave_lfo_rate,  0.0, 5.0,   "%2.1f", "wave_lfo_rate"),
     Param("atk",   synth.attack_time,    0.0, 3.0,   "%1.2f", "attack_time"),
     Param("rel",   synth.release_time,   0.0, 3.0,   "%1.2f", "release_time"),
 
@@ -164,10 +194,20 @@ PARAMS = [
     Param("lrate", synth.filt_lfo_rate,  0.0, 8.0,   "%2.1f", "filt_lfo_rate"),
     Param("vdep",  synth.vib_depth,      0.0, 0.05,  "%1.3f", "vib_depth"),
     Param("vol",   s.mixer.voice[0].level, 0.1, 1.0, "%1.2f", None),
+
+    # KEY/MOD
+    Param("scale", 0, 0, len(SCALES_USED) - 1, "%.0f", None),
+    Param("key",   0, 0, 11,                   "%.0f", None),
+    Param("wshp",  0, 0, 1,                     "%.0f", None),  # wave_lfo_shape
+    Param("w1x",   0, 0, 1,                     "%.0f", None),  # wave_lfo_once
+    Param("wvel",  synth.wave_lfo_vel,  0.0, 1.0,   "%1.2f", "wave_lfo_vel"),
+    Param("vrate", synth.vib_rate,      0.1, 12.0,  "%2.1f", "vib_rate"),
+    Param("pamt",  synth.penv_amount,  -0.5, 0.5,   "%+1.2f","penv_amount"),
+    Param("ptime", synth.penv_time,     0.005, 1.0, "%1.2f", "penv_time"),
 ]
 # fmt: on
 
-PAGES = (("WAVE", 8), ("ENV/FILT", 8))
+PAGES = (("WAVE", 8), ("ENV/FILT", 8), ("KEY/MOD", 8))
 
 # KNOB_SCALE: a turn always moves the value, scaled by the runway the knob
 # and the value each have left, so they converge without a jump.
@@ -193,6 +233,15 @@ def apply_param(p):
         synth.filt_type = FILTER_TYPES[round(p.val)]
     elif p.name == "vol":
         s.mixer.voice[0].level = min(max(p.val, 0), 1)
+    elif p.name == "scale":
+        scale.set_scale(SCALES_USED[round(p.val)])
+    elif p.name == "key":
+        key[0] = round(p.val)
+        resync_root()
+    elif p.name == "wshp":
+        synth.wave_lfo_shape = ("triangle", "saw")[round(p.val)]
+    elif p.name == "w1x":
+        synth.wave_lfo_once = bool(round(p.val))
     else:
         p.apply_to_obj(synth)
 
@@ -207,6 +256,14 @@ def read_param(p):
         p.val = FILTER_TYPES.index(synth.filt_type)
     elif p.name == "vol":
         p.val = s.mixer.voice[0].level
+    elif p.name == "scale":
+        p.val = SCALES_USED.index(scale.name) if scale.name in SCALES_USED else 0
+    elif p.name == "key":
+        p.val = key[0]
+    elif p.name == "wshp":
+        p.val = 0 if synth.wave_lfo_shape == "triangle" else 1
+    elif p.name == "w1x":
+        p.val = 1 if synth.wave_lfo_once else 0
     elif p.objattr:
         p.val = getattr(synth, p.objattr)
 
@@ -216,6 +273,14 @@ def param_text(p):
         return WAVE_NAMES[round(p.val)]
     if p.name == "ftype":
         return FILTER_TYPES[round(p.val)]
+    if p.name == "scale":
+        return SCALE_LABELS[round(p.val)]
+    if p.name == "key":
+        return NOTE_NAMES[round(p.val)]
+    if p.name == "wshp":
+        return ("tri", "saw")[round(p.val)]
+    if p.name == "w1x":
+        return ("rpt", "1x")[round(p.val)]
     return p.fmt % p.val
 
 
@@ -230,12 +295,11 @@ for _p in PARAMS:
         raise ValueError("no such synth parameter: '%s'" % _p.objattr)
     apply_param(_p)
 
-print("wavesynth: 16 pads, 8 pots edit a page, encoder turns pages")
+print("wavesynth: 8x2 scale keyboard, 8 pots / 3 pages, encoder turns pages")
 
 ui = PotPageUI(s.display, param_set, PAGES, param_text)
 
-held = {}  # step number -> midi note actually pressed
-octave = 2  # index into OCTAVES; 2 = no transpose
+held = {}  # step number -> list of midi notes that pad started
 last_steps = [False] * 16
 enc_last = s.encoder.position
 enc_held = False
@@ -244,7 +308,10 @@ pair = [0]  # which pot pair (0..3) the screen shows; last pot turned wins
 
 
 def oct_name():
-    return "%+d" % OCTAVES[octave] if OCTAVES[octave] else "0"
+    """Header right side: key note, plus an octave step when shifted. The
+    scale is on the KEY/MOD page, not here."""
+    o = octave - OCT_MID
+    return NOTE_NAMES[key[0]] + ("%+d" % o if o else "")
 
 
 def load_patch(idx):
@@ -263,8 +330,9 @@ def load_patch(idx):
 
 
 def play_pads():
-    """Diff the 16 step pads. A pad tapped while the encoder button is
-    held loads a patch instead of sounding a note."""
+    """Diff the 8x2 step grid. Bottom row (0..7) plays a scale degree;
+    top row (8..15) plays a diatonic chord on the last bottom pad. A
+    bottom pad tapped with the encoder button held loads that patch."""
     global last_steps
     steps = s.touched_steps
     changed = False
@@ -274,18 +342,23 @@ def play_pads():
         changed = True
         if steps[i]:
             if enc_held:
-                if i < len(patches):
+                if i < 8 and i < len(patches):
                     load_patch(i)
                 continue
-            note = BASE_NOTE + i + OCTAVES[octave]
-            held[i] = note
-            synth.note_on(note, VELOCITY)
-            s.send_midi_message(tmidi.Message(tmidi.NOTE_ON, note, VELOCITY))
+            if i < 8:
+                last_deg[0] = i
+                notes = [scale.degree(i)]
+            else:
+                notes = scale.chord(last_deg[0], TOP_SHAPES[i - 8])
+            notes = [n for n in notes if 0 <= n <= 127]
+            held[i] = notes
+            for n in notes:
+                synth.note_on(n, VELOCITY)
+                s.send_midi_message(tmidi.Message(tmidi.NOTE_ON, n, VELOCITY))
         else:
-            note = held.pop(i, None)
-            if note is not None:
-                synth.note_off(note)
-                s.send_midi_message(tmidi.Message(tmidi.NOTE_OFF, note, 0))
+            for n in held.pop(i, ()):
+                synth.note_off(n)
+                s.send_midi_message(tmidi.Message(tmidi.NOTE_OFF, n, 0))
     last_steps = list(steps)
     return changed
 
@@ -294,7 +367,8 @@ def check_octave():
     global octave
     d = 1 if s.up_button.pressed else -1 if s.down_button.pressed else 0
     if d:
-        octave = min(max(octave + d, 0), len(OCTAVES) - 1)
+        octave = min(max(octave + d, 0), len(OCT_STEPS) - 1)
+        resync_root()
 
 
 def check_encoder():
