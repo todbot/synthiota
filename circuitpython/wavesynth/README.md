@@ -58,14 +58,9 @@ From `circuitpython/`:
 
     circup install -r requirements.txt
 
-That installs the third-party libraries and the local `lib/` modules
-(`relic_synthiota.py`, `synthiota_potpage_ui.py`, `harmony.py`).
-
-`lib/synthtools/` is `.py` source copied from a checkout of
-github.com/todbot/CircuitPython_SynthTools -- the current bundle release
-(0.5.1) lacks the wave LFO and `synth.update()` and has a broken
-`update_knobs_scale`. Delete that folder once `circup install synthtools`
-gives a new enough version.
+That installs `synthtools` and the other third-party libraries, plus
+the local `lib/` modules (`relic_synthiota.py`, `synthiota_potpage_ui.py`,
+`harmony.py`).
 
 Copy to the CIRCUITPY root: the contents of this folder including
 `wavetables/`, plus `lib/synthtools/` and the `lib/*.py` modules.

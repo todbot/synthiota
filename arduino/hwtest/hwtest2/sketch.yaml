@@ -1,0 +1,22 @@
+default_profile: pico2
+
+profiles:
+  pico:
+    fqbn: rp2040:rp2040:rpipico:usbstack=tinyusb
+    platforms:
+      - platform: rp2040:rp2040 (6.0.0)
+        platform_index_url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+    libraries:
+      - M16 (1.0.1)
+      - Adafruit TinyUSB Library (3.7.7)
+      - MIDI Library (5.0.2)
+
+  pico2:
+    fqbn: rp2040:rp2040:rpipico2:usbstack=tinyusb
+    platforms:
+      - platform: rp2040:rp2040 (6.0.0)
+        platform_index_url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+    libraries:
+      - M16 (1.0.1)
+      - Adafruit TinyUSB Library (3.7.7)
+      - MIDI Library (5.0.2)
