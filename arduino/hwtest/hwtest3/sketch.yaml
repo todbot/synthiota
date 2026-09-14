@@ -7,13 +7,10 @@ profiles:
       - platform: rp2040:rp2040 (6.0.0)
         platform_index_url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
     libraries:
-      - Adafruit MPR121 (1.2.1)
-      - Adafruit NeoPixel (1.15.5)
-      - Adafruit SH110X (2.1.15)
-      - Adafruit GFX Library (1.12.6)
-      - RotaryEncoder (1.6.0)
-      - Bounce2 (2.71)
-      - dependency: Adafruit BusIO (1.17.4)
+      - Mozzi (2.0.4)
+      - FixMath (1.0.9)
+      - Adafruit TinyUSB Library (3.7.7)
+      - MIDI Library (5.0.2)
 
   pico2:
     fqbn: rp2040:rp2040:rpipico2:usbstack=tinyusb
@@ -21,10 +18,7 @@ profiles:
       - platform: rp2040:rp2040 (6.0.0)
         platform_index_url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
     libraries:
-      - Adafruit MPR121 (1.2.1)
-      - Adafruit NeoPixel (1.15.5)
-      - Adafruit SH110X (2.1.15)
-      - Adafruit GFX Library (1.12.6)
-      - RotaryEncoder (1.6.0)
-      - Bounce2 (2.71)
-      - dependency: Adafruit BusIO (1.17.4)
+      - Mozzi (2.0.4)
+      - FixMath (1.0.9)
+      - Adafruit TinyUSB Library (3.7.7)
+      - MIDI Library (5.0.2)

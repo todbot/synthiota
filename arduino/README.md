@@ -1,22 +1,25 @@
 # synthiota Arduino sketches
 
-Arduino sketches for the synthiota1 board (RP2040/RP2350), built with
-the [earlephilhower rp2040 core][rp2040-core] and `arduino-cli`.
+Arduino sketches for the synthiota1 board (RP2040/RP2350), 
+built with the [earlephilhower rp2040 core][rp2040-core] and `arduino-cli`.
 
 [rp2040-core]: https://github.com/earlephilhower/arduino-pico
 
 ## Sketches
 
-- **hwtest/hwtest1** -- board bring-up test: I2C scan, dual MPR121
+- **hwtest/hwtest1** -- board basic test: I2C scan, dual MPR121
   touch with NeoPixel feedback, 8-pot mux, rotary encoder + switch,
   and a SH1106 SPI OLED status page. See
   `circuitpython/hwtest/synth_setup_synthiota.py` for the pin map this
   is based on.
-- **hwtest/hwtest2** -- simple monophonic MIDI synth on
-  [M16](https://github.com/algomusic/M16), driving the PCM5102 I2S
-  DAC. Responds to both TRS UART MIDI (GP17/GP16) and USB MIDI. Needs
-  the **Adafruit TinyUSB** USB Stack board option, unlike hwtest1 --
-  see below.
+  
+- **hwtest/hwtest2** -- simple monophonic MIDI synth using
+  [M16](https://github.com/algomusic/M16), driving the PCM5102 I2S DAC. <br>
+  (saw oscillator, fixed lowpass, AR envelope, TRS + USB MIDI)
+  
+- **hwtest/hwtest3** -- simple monophonic MIDI synth using 
+  [Mozzi](https://sensorium.github.io/Mozzi/), similar to hwtest2. <br>
+   (saw oscillator, fixed lowpass, AR envelope, TRS + USB MIDI)
 
 ## sketch.yaml profiles
 
@@ -28,19 +31,29 @@ versions into an isolated store on first use, independent of whatever
 is installed globally -- so no separate `core install`/`lib install`
 step is needed for these sketches.
 
-[sketch-yaml]: https://arduino.github.io/arduino-cli/latest/sketch-project-file/
-
 Note the Arduino IDE does not read `sketch.yaml`; it only applies to
 `arduino-cli` builds. Building from the IDE instead, just open the
 `.ino` and pick the board from Tools > Board as usual (see "USB MIDI"
 below for hwtest2's extra board option).
 
+[sketch-yaml]: https://arduino.github.io/arduino-cli/latest/sketch-project-file/
+
+
 ## Board FQBNs
 
-| Board               | FQBN                     |
-|---------------------|--------------------------|
-| Raspberry Pi Pico   | `rp2040:rp2040:rpipico`  |
-| Raspberry Pi Pico 2 | `rp2040:rp2040:rpipico2` |
+| Board               | FQBN |
+|---------------------|------|
+| Raspberry Pi Pico   | `rp2040:rp2040:rpipico:usbstack=tinyusb`  |
+| Raspberry Pi Pico 2 | `rp2040:rp2040:rpipico2:usbstack=tinyusb` |
+
+
+## USB Serial and USB MIDI 
+
+Sketches use USB via `Adafruit_TinyUSB` and need the board's
+USB Stack set to **Adafruit TinyUSB** instead of the default Pico SDK
+stack. If you're using `arduino-cli`, the sketch's `sketch.yaml` profiles
+already bake this in, so use  `--profile pico2` or `--profile pico`. 
+
 
 ## Build and upload
 
@@ -69,12 +82,3 @@ hand-tracking library versions, use `arduino-cli`'s `--dump-profile`:
 arduino-cli compile --fqbn rp2040:rp2040:rpipico2 --dump-profile .
 ```
 
-## USB MIDI (hwtest2)
-
-Sketches that use USB MIDI (via `Adafruit_TinyUSB`) need the board's
-USB Stack set to **Adafruit TinyUSB** instead of the default Pico SDK
-stack -- append `:usbstack=tinyusb` to the FQBN, e.g.
-`rp2040:rp2040:rpipico2:usbstack=tinyusb`. hwtest2's `sketch.yaml`
-profiles already bake this in, so `--profile pico2` picks it up
-automatically; only pass it explicitly when compiling with a bare
-`--fqbn`.

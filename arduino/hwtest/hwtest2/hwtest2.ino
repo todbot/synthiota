@@ -69,7 +69,8 @@ void setup() {
   sawtoothWave.sawGen();
   osc.setTable(sawtoothWave);
   env.setAttack(5);
-  env.setRelease(300);
+  env.setSustain(0.85);
+  env.setRelease(500);
   filt.setFreq(3000);
   filt.setRes(0);
 
