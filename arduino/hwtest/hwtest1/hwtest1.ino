@@ -108,20 +108,70 @@ void update_touch_leds(uint32_t touched) {
   leds.show();
 }
 
-void updateDisplay(uint32_t touched, long encPos) {
+// layout: a thin encoder line across the top, 8 pots as vertical sliders
+// below that, then 24 touch pads as an 8x3 grid of squares at the
+// bottom, the pots and pads sharing the same 8-column spacing
+const int disp_col_x0 = 4;
+const int disp_col_w  = 16;
+
+const int enc_line_x0 = disp_col_x0;
+const int enc_line_x1 = disp_col_x0 + (num_pots - 1) * disp_col_w + 8;  // right edge of last pot slider
+const int enc_line_y  = 4;
+const int enc_knob_r  = 3;
+const int enc_ticks   = 16;  // wrap encoder position into this many knob stops
+
+const int slider_top = 9;
+const int slider_h   = 30;
+const int slider_w   = 8;
+
+const int grid_y0     = 41;
+const int grid_row_h  = 7;
+const int square_w    = 8;
+const int square_h    = 6;
+
+void updateDisplay(uint32_t touched, long encPos, bool encPressed) {
   disp.clearDisplay();
-  disp.setTextSize(1);
-  disp.setTextColor(SH110X_WHITE);
-  disp.setCursor(0, 0);
-  disp.println("synthiota hwtest1");
-  disp.print("touch: ");
-  disp.println(touched, HEX);
-  disp.print("pots: ");
-  disp.print(pot_vals[0]);
-  disp.print(" ");
-  disp.println(pot_vals[num_pots - 1]);
-  disp.print("enc: ");
-  disp.println(encPos);
+
+  // encoder: a thin line with a small knob that slides along it as the
+  // encoder turns (position wraps -- there's no absolute end to the
+  // travel), switching shape while the encoder switch is held down
+  disp.drawFastHLine(enc_line_x0, enc_line_y, enc_line_x1 - enc_line_x0, SH110X_WHITE);
+  long wrapped = ((encPos % enc_ticks) + enc_ticks) % enc_ticks;
+  int knob_x = map(wrapped, 0, enc_ticks - 1,
+                    enc_line_x0 + enc_knob_r, enc_line_x1 - enc_knob_r);
+  if (encPressed) {
+    disp.fillRect(knob_x - enc_knob_r, enc_line_y - enc_knob_r,
+                  enc_knob_r * 2, enc_knob_r * 2, SH110X_WHITE);
+  } else {
+    disp.fillCircle(knob_x, enc_line_y, enc_knob_r, SH110X_WHITE);
+  }
+
+  // pots as vertical sliders
+  for (int i = 0; i < num_pots; i++) {
+    int x = disp_col_x0 + i * disp_col_w;
+    disp.drawRect(x, slider_top, slider_w, slider_h, SH110X_WHITE);
+    int fill_h = map(pot_vals[i], 0, 1023, 0, slider_h - 2);
+    disp.fillRect(x + 1, slider_top + 1 + (slider_h - 2 - fill_h),
+                  slider_w - 2, fill_h, SH110X_WHITE);
+  }
+
+  // touch pads as an 8x3 grid of squares
+  for (int i = 0; i < 24; i++) {
+    // touch_to_led[i] is the physical LED index for pad i (LED 0 = bottom
+    // left, LED 23 = top right, 8 LEDs per row, rows bottom to top);
+    // reuse it here so the grid matches the NeoPixels' physical layout.
+    int led = touch_to_led[i];
+    int col = led % 8;
+    int row = 2 - (led / 8);
+    int x = disp_col_x0 + col * disp_col_w;
+    int y = grid_y0 + row * grid_row_h;
+    if (touched & (1UL << i)) {
+      disp.fillRect(x, y, square_w, square_h, SH110X_WHITE);
+    } else {
+      disp.drawRect(x, y, square_w, square_h, SH110X_WHITE);
+    }
+  }
+
   disp.display();
 }
 
@@ -185,7 +235,7 @@ void loop() {
   uint32_t touched = update_touch();
 
   update_touch_leds(touched);
-  updateDisplay(touched, encoder.getPosition());
+  updateDisplay(touched, encoder.getPosition(), encoderButton.isPressed());
 
   if (encoderButton.pressed()) {
     Serial.println("        encoder PRESS");
