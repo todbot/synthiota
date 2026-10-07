@@ -237,7 +237,8 @@ def check_encoder():
     global enc_last, oct_i, base_note, latch
     pos = s.encoder.position
     if pos != enc_last:
-        oct_i = min(max(oct_i + (pos - enc_last), 0), len(OCTAVES) - 1)
+        # this encoder counts down going clockwise
+        oct_i = min(max(oct_i + (enc_last - pos), 0), len(OCTAVES) - 1)
         base_note = OCTAVES[oct_i]
         enc_last = pos
     if s.encoder_button.pressed:

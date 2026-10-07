@@ -8,6 +8,7 @@ For actual applications, see the directories.
 - `polysynth/`  - subtractive polysynth on synthtools' SubtractiveSynth
 - `wavesynth/`  - wavetable polysynth on synthtools' WavetableSynth
 - `tbish/`      - TB-303 inspired mono bass synth
+- `tbish2/`     - tbish on synthtools' BasslineSynth
 - `synthtest/`  - earlier synth playground
 
 `polysynth/` and `wavesynth/` are ported from the pico_test_synth repo

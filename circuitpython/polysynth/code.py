@@ -189,7 +189,8 @@ def check_encoder():
     global enc_last
     pos = s.encoder.position
     if pos != enc_last:
-        param_set.idx = (param_set.idx + (pos - enc_last)) % param_set.nknobsets
+        # this encoder counts down going clockwise
+        param_set.idx = (param_set.idx + (enc_last - pos)) % param_set.nknobsets
         param_set.knob_pos_last = None  # re-adopt pot positions, no phantom move
         pair[0] = 0
         enc_last = pos
