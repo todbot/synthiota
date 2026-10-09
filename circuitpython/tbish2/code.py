@@ -134,7 +134,7 @@ patch = Patch(
     decay=0.3,
     # long decay: a run of slides is ONE note, so it must outlast the run
     amp_env=[0.001, 1.0, 0.0, 0.02],
-    fenv_curve=3,
+    fenv_curve=2,
     accent=0.5,
     accent_cutoff=4000,
     accent_q=0.8,
