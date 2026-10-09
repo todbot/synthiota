@@ -164,8 +164,18 @@ BasslineSynth.FILT_F_MAX = s.sample_rate * 0.45  # SUBCLASS, before constructing
 bass = BasslineSynth(sio, patch)
 
 # Without bass.output the fx chain is bypassed and the synth sounds thin.
+OUT_LPF_F = 8000  # tames the top of the aliased saw; can't remove what folds below it
 try:
-    s.mixer.voice[0].play(bass.output)
+    import audiofilters
+
+    # 4th-order Butterworth: two stages at these Qs
+    out_lpf = audiofilters.Filter(
+        filter=(synthio.Biquad(synthio.FilterMode.LOW_PASS, OUT_LPF_F, Q=0.541),
+                synthio.Biquad(synthio.FilterMode.LOW_PASS, OUT_LPF_F, Q=1.307)),
+        sample_rate=s.sample_rate, channel_count=s.channel_count,
+        buffer_size=BasslineSynth.FX_BUFFER_SIZE)
+    out_lpf.play(bass.output)
+    s.mixer.voice[0].play(out_lpf)
 except ImportError:
     print("no audiofilters/audiodelays in this build: 12 dB/oct, no drive, no delay")
     s.mixer.voice[0].play(sio)
