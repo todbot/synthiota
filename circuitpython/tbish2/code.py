@@ -35,7 +35,8 @@ from synthtools.paramset import Param, ParamSet
 from synthtools.step_sequencer import StepSequencer
 from tbish2_ui import TBish2UI
 
-SAMPLE_RATE = 44100  # set to 22050 here if audio glitches
+#SAMPLE_RATE = 44100  # set to 22050 here if audio glitches
+SAMPLE_RATE = 22050
 
 # distortion is too expensive on an rp2040
 IS_RP2350 = "rp2350" in os.uname()[0]
@@ -130,7 +131,7 @@ patch = Patch(
     filt_f=2345,
     filt_q=1.8,
     envmod=0.5,
-    decay=0.09,
+    decay=0.3,
     # long decay: a run of slides is ONE note, so it must outlast the run
     amp_env=[0.001, 1.0, 0.0, 0.02],
     fenv_curve=3,
@@ -172,12 +173,12 @@ except ImportError:
 # --- the 16 synth parameters: page 0 is "play" mode, page 1 "more" --------
 # fmt: off
 PARAMS = [
-    Param("cutoff",   patch.filt_f,        100,  5000,  "%4d",   "filt_f"),
+    Param("cutoff",   patch.filt_f,        100,  4000,  "%4d",   "filt_f"),
     Param("envmod",   patch.envmod,        0.0,  1.0,   "%.2f",  "envmod"),
     # 4.0, not 6.0: an accent adds up to accent_q on top
     Param("resQ",     patch.filt_q,        0.6,  8.0,   "%.2f",  "filt_q"),
     # a 16th's gate is ~90 ms, so a longer fall is never heard
-    Param("decay",    patch.decay,         0.01, 0.15,  "%.2f",  "decay"),
+    Param("decay",    patch.decay,         0.01, 2.0,  "%.2f",  "decay"),
     Param("accent",   patch.accent,        0.0,  1.0,   "%.2f",  "accent"),
     Param("wave",     WAVES.index(patch.wave), 0, len(WAVES) - 1, "%.0f", None),
     # the mix, as tbish's Drive knob was: an amount alone is never heard

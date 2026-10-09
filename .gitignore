@@ -36,6 +36,11 @@ production-old
 fabrication-toolkit-options.json
 schematics/*/*zip
 
+# Python-specific files
+__pycache__
+*.pyc
+.pytest_cache
+
 # tod spew
 circuitpython/old
 circuitpython/bak
