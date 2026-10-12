@@ -21,8 +21,12 @@
 #   hold left slider, left end + encoder ... bpm
 #   hold left slider, right end + encoder .. steps per beat
 
+# overclock to fix some lag
 import microcontroller
-microcontroller.cpu.frequency = 200_000_000
+if microcontroller.cpu.architecture == "armv7emsp": # pico2 rp2350
+    microcontroller.cpu.frequency = 150_000_000
+else:
+    microcontroller.cpu.frequency = 250_000_000
 
 import json
 import os
@@ -135,7 +139,7 @@ patch = Patch(
     # long decay: a run of slides is ONE note, so it must outlast the run
     amp_env=[0.001, 1.0, 0.0, 0.02],
     fenv_curve=2,
-    accent=0.5,
+    accent=0.75,
     accent_cutoff=4000,
     accent_q=0.8,
     amp_level=0.75,      # un-accented level, so accents have room
