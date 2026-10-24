@@ -535,7 +535,11 @@ def update_ui():
 
 set_mode(MODE_PLAY)
 
+from supervisor import ticks_ms  # TODO temp: stall logging
+
 while True:
+    t0 = ticks_ms()
+    ui_ran = False
     sequencer.update()
     s.update()
     pads_changed = check_pads()
@@ -546,7 +550,11 @@ while True:
     if now - last_ui > UI_INTERVAL:
         last_ui = now
         update_ui()
+        ui_ran = True
         # not on a pass that just built a voice
         if ui.dirty and not pads_changed:
             s.display.refresh()
             ui.dirty = False
+    dt = ticks_ms() - t0
+    if dt > 30:  # TODO temp: catch stalls that make steps late
+        print("slow pass: %d ms%s" % (dt, " (ui)" if ui_ran else ""))
