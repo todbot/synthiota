@@ -36,8 +36,9 @@ running. Boots with oscillator 1 sounding.
 - encoder press .. pitch snap: semitones / free
 - up / down ...... the octave all eight pots start from; oscillator 1-2
                    lands on C0, C1, C2 or C3 and the rest sit above it
-- left slider .... filter cutoff (while touched)
-- right slider ... master over all eight LFO depths (while touched)
+- left slider .... tap an end: filter cutoff down / up
+- right slider ... tap an end: the LFO depth master down / up
+                   hold either end and it repeats
 - bottom LEDs .... amber where an oscillator is in
 - top LEDs ....... green pitch LFO, blue volume LFO, pulsing at its own
                    rate; white while a knob or the encoder is steering it
@@ -54,7 +55,9 @@ running. Boots with oscillator 1 sounding.
 Pitch snap is on at boot: each pot lands on a semitone, which is how you
 tune intervals that stay put. Press the encoder for free tuning and the
 pots sweep continuously, for the beating two oscillators a few cents
-apart make.
+apart make. Snapping back on leaves the detuned oscillators where they
+are; each one lands on a semitone the next time its pot or an octave
+button moves it.
 
 ## MIDI
 
@@ -86,6 +89,13 @@ github.com/relic-se/CircuitPython_Synthiota
   inaudible. At `OSC_AMP = 0.3` with the mixer wide open one oscillator
   is 15% FS and all eight ride synthio's 28000 soft knee at 86% with no
   rail samples, in unison as well as spread out.
+- Both strips are read as four buttons, not as positions: a tap on an
+  end steps its parameter, a hold repeats after 0.35s. The continuous
+  position of these strips reads too roughly on this board to play with,
+  and the pads' own touch thresholds are solid. The strips have no LEDs
+  of their own to show the value with -- relic's `left_slider_leds` are
+  the same pixels as pot LEDs 1-3 -- so the screen's `cut` and `mod`
+  readout is the indicator.
 - A resting pot has to be dead still, because pot position *is* pitch:
   rest jitter measures about 0.004 on these muxed pots, which over a
   2-octave pot is 10 cents of warble on every sounding oscillator. So a

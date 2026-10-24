@@ -23,8 +23,9 @@
 #   encoder turn .... waveform, when no top pad is held
 #   encoder push .... pitch snap: semitones / free
 #   up / down ....... octave all eight pots reach
-#   left slider ..... filter cutoff
-#   right slider .... master over all eight LFO depths
+#   left slider ..... tap an end: filter cutoff down / up
+#   right slider .... tap an end: the LFO depth master down / up
+#                     either one repeats while held
 
 import sys
 import microcontroller
@@ -84,11 +85,16 @@ MODE_OFF, MODE_PITCH, MODE_VOL = 0, 1, 2
 WAVES = ("SIN", "TRI", "SAW", "SQU", "ASAW", "ATRI", "ASQU", "SSQU")
 WAVE_SIZE = 256  # get_wave()'s own default, needed here for the buffer
 
-# touch ids of the two slider strips, so a slider only reads as live while
-# a finger is actually on it (relic's Slider.value can drift off its
-# baseline; s.touched uses the MPR121's own threshold)
-LSLIDE_PADS = (23, 22, 21)
-RSLIDE_PADS = (12, 13, 14)
+# The strips are used as four buttons, not as positions: their continuous
+# value reads too roughly on this board to play with. Touch ids from
+# relic's pad defs; the middle pad of each strip is unused.
+#   (pad, what it nudges, which way)
+SLIDE_ENDS = ((23, "cut", -1), (21, "cut", 1), (12, "mod", -1), (14, "mod", 1))
+SLIDE_DELAY = 0.35  # held this long before it starts repeating
+SLIDE_REPEAT = 0.07
+CUT_STEP = 0.04  # of the cutoff's 0..1 position, per nudge
+MOD_STEP = 0.04
+CUT_INIT = 0.8
 
 s = relic_synthiota.Synthiota(sample_rate=SAMPLE_RATE)
 # relic leaves both of these on; the redraw gating and single-show LED
@@ -149,6 +155,9 @@ press_at = [0.0] * 16  # when each pad went down, by pad not by oscillator
 adjusted = [False] * 16  # this press has modified something, so it is no tap
 adjust = None  # oscillator whose top pad is down, the one a knob/encoder steers
 quantize = True  # free tuning warbles under pot jitter, so snap by default
+cut_pos = CUT_INIT  # the cutoff as 0..1, which is what the nudges move
+end_down = [False] * len(SLIDE_ENDS)
+end_at = [0.0] * len(SLIDE_ENDS)  # when a held end fires next
 last_steps = [False] * 16
 enc_last = s.encoder.position
 last_ui = 0.0
@@ -235,7 +244,9 @@ def set_wave(i):
 
 
 def set_cut(v):
-    cut_blk.a = CUT_MIN * (CUT_MAX / CUT_MIN) ** min(max(v, 0.0), 1.0)
+    global cut_pos
+    cut_pos = min(max(v, 0.0), 1.0)
+    cut_blk.a = CUT_MIN * (CUT_MAX / CUT_MIN) ** cut_pos
 
 
 def set_on(i, v):
@@ -306,10 +317,6 @@ def check_encoder():
             adjusted[8 + adjust] = True
     if s.encoder_button.pressed:
         quantize = not quantize
-        if quantize:  # snap where they stand, no waiting for a pot to move
-            for i in range(NUM_OSC):
-                pitch[i] = round(pitch[i])
-                notes[i].frequency = note_hz(pitch[i])
 
 
 def check_midi():
@@ -327,23 +334,27 @@ def check_midi():
                     set_on(i, False)
 
 
-def slider_value(slider, pads, touched):
-    """None unless a finger is on the strip. relic's Slider.value divides by
-    a sum of two pad readings, which can land on zero as a finger lifts."""
-    if not any(touched[p] for p in pads):
-        return None
-    try:
-        return slider.value
-    except ZeroDivisionError:
-        return None
+def nudge(what, d):
+    if what == "cut":
+        set_cut(cut_pos + d * CUT_STEP)
+    else:
+        set_mod_scale(mod_scale + d * MOD_STEP)
 
 
-def apply_sliders():
+def check_sliders():
+    """Each strip is two buttons: a tap on an end nudges, holding repeats."""
     t = s.touched
-    if (v := slider_value(s.left_slider, LSLIDE_PADS, t)) is not None:
-        set_cut(v)
-    if (v := slider_value(s.right_slider, RSLIDE_PADS, t)) is not None:
-        set_mod_scale(v)
+    now = time.monotonic()
+    for k, (pad, what, d) in enumerate(SLIDE_ENDS):
+        if not t[pad]:
+            end_down[k] = False
+        elif not end_down[k]:
+            end_down[k] = True
+            end_at[k] = now + SLIDE_DELAY
+            nudge(what, d)
+        elif now >= end_at[k]:
+            end_at[k] = now + SLIDE_REPEAT
+            nudge(what, d)
 
 
 def steering():
@@ -407,6 +418,7 @@ for _i, _v in enumerate(s.pots):  # relic primes the ADCs, so these are good now
     set_pitch(_i, _v)
 
 set_wave(wave_i)
+set_cut(CUT_INIT)
 set_on(0, True)  # one oscillator sounding at boot, so the audio chain shows
 
 ui = DroneUI(s.display)
@@ -428,13 +440,13 @@ while True:
         check_pads()
         check_octave()
         check_encoder()
+        check_sliders()
         check_midi()
 
         now = time.monotonic()
         if now - last_ui > UI_INTERVAL:
             last_ui = now
             read_pots()
-            apply_sliders()
             update_leds()
             update_ui()
             if ui.dirty:
