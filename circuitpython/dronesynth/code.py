@@ -19,9 +19,10 @@
 #                     hold + up/down: shift that one by an octave
 #   top pads ........ tap: LFO off -> pitch -> volume
 #                     hold + encoder: that LFO's rate
+#                     hold + encoder push: that LFO's shape
 #                     hold + its own pot: that LFO's depth
 #   encoder turn .... waveform, when no top pad is held
-#   encoder push .... pitch snap: semitones / free
+#   encoder push .... pitch snap: semitones / free, when none is held
 #   up / down ....... octave all eight pots reach
 #   left slider ..... tap an end: filter cutoff down / up
 #   right slider .... tap an end: the LFO depth master down / up
@@ -32,6 +33,7 @@ import microcontroller
 # CircuitPython 10.3.1 has no microcontroller.cpu.architecture
 microcontroller.cpu.frequency = 200_000_000 if sys.platform == "RP2350" else 250_000_000
 
+import math
 import time
 import traceback
 import synthio
@@ -71,7 +73,17 @@ OSC_AMP = 0.3
 # Mutually non-harmonic defaults, so eight free LFOs never line up.
 RATES = (0.11, 0.17, 0.23, 0.31, 0.43, 0.57, 0.77, 1.03)
 RATE_MIN, RATE_MAX = 0.02, 20.0
-RATE_STEP = 1.15  # per encoder click
+RATE_SPAN = math.log(RATE_MAX / RATE_MIN)
+# A click is this much of a step, interpolated across the range: 4% down
+# at 50s a cycle, 30% at 20Hz
+RATE_STEP_LO, RATE_STEP_HI = 1.04, 1.30
+LFO_WAVES = ("TRI", "D10", "D30", "D50", "D70", "D90")
+# fraction of the cycle each decay takes, D50 where the square used to be
+LFO_DECAY = (None, 0.1, 0.3, 0.5, 0.7, 0.9)  # None is the triangle
+DECAY_K = 4.0  # e-foldings over that fraction, so it ends within 2% of rest
+# 128 leaves the shortest decay a dozen samples; the LFO interpolates
+# between them, so a coarse table would step the modulation audibly
+LFO_WAVE_SIZE = 128
 
 PITCH_MOD_MAX = 0.08  # octaves at depth 1.0, about a semitone either way
 DEPTH_INIT = 0.3
@@ -121,6 +133,10 @@ wave_buf = np.zeros(WAVE_SIZE, dtype=np.int16)
 
 notes = []
 lfos = []
+lfo_wave = [0] * NUM_OSC
+# One buffer per LFO, written in place by set_lfo_wave(): synthio's
+# LFO.waveform is read-only once the LFO is built.
+lfo_bufs = [np.zeros(LFO_WAVE_SIZE, dtype=np.int16) for _ in range(NUM_OSC)]
 for i in range(NUM_OSC):
     notes.append(
         synthio.Note(
@@ -134,7 +150,8 @@ for i in range(NUM_OSC):
                                   Q=q_blk),
         )
     )
-    lfo = synthio.LFO(rate=RATES[i], phase_offset=i / NUM_OSC)
+    lfo = synthio.LFO(waveform=lfo_bufs[i], rate=RATES[i],
+                      phase_offset=i / NUM_OSC)
     lfos.append(lfo)
     # Unattached blocks freeze, so an LFO routed nowhere, or whose
     # oscillator is out, would jump phase the moment it came back.
@@ -204,6 +221,11 @@ def read_pots():
         set_pitch(i, pot_pos[i])
 
 
+def unipolar(i):
+    """A decay shape runs 1 down to 0, the triangle -1 to 1."""
+    return LFO_DECAY[lfo_wave[i]] is not None
+
+
 def apply_mod(i):
     """Route oscillator i's LFO: to pitch, to volume, or nowhere."""
     lfo, note = lfos[i], notes[i]
@@ -214,10 +236,14 @@ def apply_mod(i):
         note.amplitude = OSC_AMP
         note.bend = lfo
     elif mode[i] == MODE_VOL:
-        # the offset keeps the swing at or above zero: a negative amplitude
+        # either way the swing stays at or above zero: a negative amplitude
         # flips phase instead of going quiet, which tremolos at twice the rate
-        lfo.scale = OSC_AMP * d / 2
-        lfo.offset = OSC_AMP * (1 - d / 2)
+        if unipolar(i):
+            lfo.scale = OSC_AMP * d
+            lfo.offset = OSC_AMP * (1 - d)
+        else:
+            lfo.scale = OSC_AMP * d / 2
+            lfo.offset = OSC_AMP * (1 - d / 2)
         note.bend = 0.0
         note.amplitude = lfo
     else:
@@ -235,6 +261,29 @@ def set_mod_scale(v):
     mod_scale = min(max(v, 0.0), 1.0)
     for i in range(NUM_OSC):
         apply_mod(i)
+
+
+def set_lfo_wave(i, w):
+    lfo_wave[i] = w
+    buf = lfo_bufs[i]
+    dec = LFO_DECAY[w]
+    for j in range(LFO_WAVE_SIZE):
+        p = j / LFO_WAVE_SIZE
+        if dec is None:
+            p *= 4.0
+            v = p if p < 1 else 2 - p if p < 3 else p - 4
+        else:
+            v = math.exp(-DECAY_K * p / dec)
+        buf[j] = int(32767 * v)
+    apply_mod(i)
+
+
+def set_rate(i, d):
+    """Move LFO i by d encoder clicks, in steps that shrink as it slows."""
+    lfo = lfos[i]
+    frac = min(max(math.log(lfo.rate / RATE_MIN) / RATE_SPAN, 0.0), 1.0)
+    step = RATE_STEP_LO + (RATE_STEP_HI - RATE_STEP_LO) * frac
+    lfo.rate = min(max(lfo.rate * step**d, RATE_MIN), RATE_MAX)
 
 
 def set_wave(i):
@@ -312,11 +361,14 @@ def check_encoder():
         if adjust is None:
             set_wave((wave_i + d) % len(WAVES))
         else:
-            lfo = lfos[adjust]
-            lfo.rate = min(max(lfo.rate * RATE_STEP**d, RATE_MIN), RATE_MAX)
+            set_rate(adjust, d)
             adjusted[8 + adjust] = True
     if s.encoder_button.pressed:
-        quantize = not quantize
+        if adjust is None:
+            quantize = not quantize
+        else:
+            set_lfo_wave(adjust, (lfo_wave[adjust] + 1) % len(LFO_WAVES))
+            adjusted[8 + adjust] = True
 
 
 def check_midi():
@@ -375,7 +427,8 @@ def mod_color(i, steer):
     lfo = lfos[i]
     b = 1.0
     if lfo.scale:  # zero depth leaves nothing to pulse with
-        b = 0.3 + 0.35 * (1.0 + (lfo.value - lfo.offset) / lfo.scale)
+        v = (lfo.value - lfo.offset) / lfo.scale  # back to the raw shape
+        b = 0.3 + 0.35 * (1.0 + (v * 2 - 1 if unipolar(i) else v))
     if i == steer:
         return (int(255 * b),) * 3
     if mode[i] == MODE_PITCH:
@@ -402,13 +455,20 @@ def update_leds():
     s.leds.show()
 
 
+def rate_text(r):
+    """Hz once it is fast, seconds a cycle below that: a 30s swell reads
+    as 0.03Hz either way you nudge it."""
+    return "%.1fHz" % r if r >= 1.0 else "%.1fs" % (1.0 / r)
+
+
 def update_ui():
     ui.set_header(WAVES[wave_i], "semi" if quantize else "free")
     for i in range(NUM_OSC):
         ui.set_osc(i, pitch[i], mode[i], on[i])
     steer = steering()
     if steer is not None:
-        ui.set_status("LFO%d %5.2fHz d%.2f" % (steer + 1, lfos[steer].rate, depth[steer]))
+        ui.set_status("LFO%d %s %s d%.2f" % (steer + 1, rate_text(lfos[steer].rate),
+                                            LFO_WAVES[lfo_wave[steer]], depth[steer]))
     else:
         ui.set_status("cut %4d  mod %.2f" % (cut_blk.a, mod_scale))
 
@@ -418,6 +478,8 @@ for _i, _v in enumerate(s.pots):  # relic primes the ADCs, so these are good now
     set_pitch(_i, _v)
 
 set_wave(wave_i)
+for _i in range(NUM_OSC):
+    set_lfo_wave(_i, 0)
 set_cut(CUT_INIT)
 set_on(0, True)  # one oscillator sounding at boot, so the audio chain shows
 

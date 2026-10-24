@@ -12,8 +12,8 @@ The pad grid is split the way the controls are: the **bottom row**
 switches oscillator 1-8 in and out, the **top row** is that oscillator's
 own LFO. Tap a top pad to cycle its LFO: off, pitch (green), volume
 (blue). Hold the pad and turn the encoder for that LFO's rate, from one
-cycle a minute to 20 Hz, or turn that oscillator's own knob for its
-depth.
+cycle every 50 seconds to 20 Hz, press the encoder for its shape, or
+turn that oscillator's own knob for its depth.
 
 Both rows are tap-or-hold, and a tap acts when you lift: holding a pad
 makes it a modifier, so it never also switches an oscillator or cycles
@@ -31,9 +31,11 @@ running. Boots with oscillator 1 sounding.
                    up to two either way
 - top pads ....... tap: LFO off -> pitch -> volume -> off
                    hold + encoder turn: that LFO's rate
+                   hold + encoder press: that LFO's shape, cycling
+                   TRI D10 D30 D50 D70 D90
                    hold + its own pot: that LFO's depth
 - encoder turn ... waveform, when no top pad is held
-- encoder press .. pitch snap: semitones / free
+- encoder press .. pitch snap: semitones / free, no top pad held
 - up / down ...... the octave all eight pots start from; oscillator 1-2
                    lands on C0, C1, C2 or C3 and the rest sit above it
 - left slider .... tap an end: filter cutoff down / up
@@ -49,8 +51,9 @@ running. Boots with oscillator 1 sounding.
 - play LED ....... lit while any oscillator is in
 - screen ......... per oscillator: LFO mode (`.` `P` `V`), the note it is
                    tuned to, and an underline while it sounds. The status
-                   line is cutoff and the depth master, or the rate and
-                   depth of whichever LFO is being steered.
+                   line is cutoff and the depth master, or the rate,
+                   shape and depth of whichever LFO is being steered.
+                   A rate under 1 Hz reads as seconds a cycle.
 
 Pitch snap is on at boot: each pot lands on a semitone, which is how you
 tune intervals that stay put. Press the encoder for free tuning and the
@@ -58,6 +61,23 @@ pots sweep continuously, for the beating two oscillators a few cents
 apart make. Snapping back on leaves the detuned oscillators where they
 are; each one lands on a semitone the next time its pot or an octave
 button moves it.
+
+The encoder's rate clicks are not evenly spaced: a click is 4% of the
+rate down at 50 seconds a cycle and 30% up at 20 Hz, so two thirds of
+the encoder's travel sits below 0.5 Hz where a drone lives. End to end
+is about 58 clicks.
+
+The LFO shapes are a triangle and five decays, named for how much of
+the cycle the decay takes: `TRI D10 D30 D50 D70 D90`. Each one snaps to
+full and falls away exponentially, four e-foldings over that fraction,
+so it is spent before the cycle turns over. D10 is a ping, D90 a long
+sag that never quite settles.
+
+A decay only pushes one way, up from the tuned pitch or down from the
+oscillator's level, so a pinged oscillator sits exactly where you tuned
+it between pings. The triangle is the one shape that swings both ways,
+and on pitch it is the only one that detunes an oscillator flat as well
+as sharp.
 
 ## MIDI
 
@@ -107,12 +127,20 @@ github.com/relic-se/CircuitPython_Synthiota
   travels, so the depth does not jump to wherever the pitch left the
   knob. The pitch itself stays put until that pot is turned again with
   the pad up, and then it goes to where the knob now points.
+- Each LFO owns a 128-sample waveform buffer that its shape is written
+  into in place, because `synthio.LFO.waveform` is read-only once the
+  LFO is built. 128 leaves the shortest decay a dozen samples, and the
+  LFO interpolates between them, so a coarser table would step the
+  modulation audibly.
 - All eight oscillators read one shared waveform buffer, which the
   encoder writes into rather than handing out a new array, so a waveform
   change reaches oscillators already sounding.
-- The volume LFO swings the amplitude between `(1 - depth)` and 1 of the
-  oscillator's level, never below zero: a negative amplitude flips the
-  phase instead of going quiet, which tremolos at twice the rate.
+- The volume LFO swings the amplitude between `(1 - depth)` and 1 of
+  the oscillator's level, never below zero: a negative amplitude flips
+  the phase instead of going quiet, which tremolos at twice the rate.
+  The decay shapes run 1 to 0 rather than -1 to 1, so they take the
+  whole of that span from the top while the triangle takes half of it
+  either side of the middle.
 - Each oscillator carries its own `synthio.Biquad` because filters hold
   state and cannot be shared; the cutoff and Q are shared blocks, so the
   slider is one write for all eight.
