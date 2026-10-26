@@ -11,9 +11,12 @@ octaves between them rather than all landing in the same two.
 The pad grid is split the way the controls are: the **bottom row**
 switches oscillator 1-8 in and out, the **top row** is that oscillator's
 own LFO. Tap a top pad to cycle its LFO: off, pitch (green), volume
-(blue). Hold the pad and turn the encoder for that LFO's rate, from one
-cycle every 50 seconds to 20 Hz, press the encoder for its shape, or
-turn that oscillator's own knob for its depth.
+(blue), both at once (cyan). Hold the pad and turn the encoder for that
+LFO's rate, from one cycle every 50 seconds to 20 Hz, press the encoder
+for its shape, or turn that oscillator's own knob for its depth. Pitch
+and volume keep separate depths: the knob moves whichever the LFO is
+driving, so tap to pitch and set it, tap to volume and set that, and
+both are remembered when you tap to both.
 
 Both rows are tap-or-hold, and a tap acts when you lift: holding a pad
 makes it a modifier, so it never also switches an oscillator or cycles
@@ -29,31 +32,36 @@ running. Boots with oscillator 1 sounding.
 - bottom pads .... tap: oscillator in / out
                    hold + up/down: shift that oscillator by an octave,
                    up to two either way
-- top pads ....... tap: LFO off -> pitch -> volume -> off
+- top pads ....... tap: LFO off -> pitch -> volume -> both -> off
                    hold + encoder turn: that LFO's rate
                    hold + encoder press: that LFO's shape, cycling
                    TRI D10 D30 D50 D70 D90
-                   hold + its own pot: that LFO's depth
+                   hold + its own pot: the depth of what that LFO
+                   drives, or both depths while it is off
 - encoder turn ... waveform, when no top pad is held
 - encoder press .. pitch snap: semitones / free, no top pad held
 - up / down ...... the octave all eight pots start from; oscillator 1-2
                    lands on C0, C1, C2 or C3 and the rest sit above it
 - left slider .... tap an end: filter cutoff down / up
-- right slider ... tap an end: the LFO depth master down / up
+- right slider ... tap an end: the depth master, over all sixteen
+                   depths at once, down / up
                    hold either end and it repeats
 - bottom LEDs .... amber where an oscillator is in
-- top LEDs ....... green pitch LFO, blue volume LFO, pulsing at its own
-                   rate; white while a knob or the encoder is steering it
+- top LEDs ....... green pitch LFO, blue volume LFO, cyan both,
+                   pulsing at its own rate; white while a knob or the
+                   encoder is steering it
 - pot LEDs ....... the eight pot positions, magenta on the one knob
-                   that is setting a depth
+                   that is setting a depth, showing that depth
 - mode LED ....... lit while pitch snap is on
 - edit LED ....... lit while a held pad is steering an LFO
 - play LED ....... lit while any oscillator is in
-- screen ......... per oscillator: LFO mode (`.` `P` `V`), the note it is
+- screen ......... per oscillator: LFO mode (`.` `P` `V` `B`), the note it is
                    tuned to, and an underline while it sounds. The status
-                   line is cutoff and the depth master, or the rate,
-                   shape and depth of whichever LFO is being steered.
-                   A rate under 1 Hz reads as seconds a cycle.
+                   line is cutoff and the depth master, or
+                   `L4 18.9s D10 30/75` for whichever LFO is being
+                   steered: its rate, shape and its pitch and volume
+                   depths as percentages. A rate under 1 Hz reads as
+                   seconds a cycle.
 
 Pitch snap is on at boot: each pot lands on a semitone, which is how you
 tune intervals that stay put. Press the encoder for free tuning and the
@@ -144,6 +152,13 @@ github.com/relic-se/CircuitPython_Synthiota
 - Each oscillator carries its own `synthio.Biquad` because filters hold
   state and cannot be shared; the cutoff and Q are shared blocks, so the
   slider is one write for all eight.
+- Pitch and volume run off separate LFO blocks, two per oscillator,
+  because one block carries one scale and one offset and the two
+  destinations need different ones. They share the waveform buffer and
+  take the same rate from the same nudge, so they ping together, but
+  they carry their own depths. Both are scaled whatever the mode is,
+  which leaves the pad LED a swing to pulse with and makes a mode
+  change nothing but a reroute.
 - Every LFO is rooted in `synth.blocks`, so it keeps running while it
   is routed nowhere or its oscillator is out. An unattached block
   freezes, and would jump phase the moment it was routed.

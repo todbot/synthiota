@@ -19,7 +19,7 @@ FNT = terminalio.FONT
 WHITE = 0xFFFFFF
 
 NOTE_NAMES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-MODE_CHARS = (".", "P", "V")  # off, pitch LFO, volume LFO
+MODE_CHARS = (".", "P", "V", "B")  # off, pitch LFO, volume LFO, both
 
 COL_X0, COL_DX = 5, 15
 MODE_Y, NAME_Y, OCT_Y, BAR_Y = 20, 32, 42, 48

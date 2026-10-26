@@ -6,7 +6,7 @@
 # Not a keyboard instrument: the eight pots ARE the pitches, one pot per
 # oscillator, and the bottom pad row switches each oscillator in and out.
 # The top row is that oscillator's own LFO -- tap to cycle pitch (green),
-# volume (blue), off, hold and turn the encoder for its rate.
+# volume (blue), both (cyan), off, hold and turn the encoder for its rate.
 #
 # Eight synthio Notes pressed and released in place, not a synthtools
 # Synth: a Synth's voices are keyed to midi notes and built at note_on.
@@ -17,10 +17,10 @@
 #   8 pots .......... oscillator pitch, 2 octaves each
 #   bottom pads ..... tap: oscillator in / out
 #                     hold + up/down: shift that one by an octave
-#   top pads ........ tap: LFO off -> pitch -> volume
+#   top pads ........ tap: LFO off -> pitch -> volume -> both
 #                     hold + encoder: that LFO's rate
 #                     hold + encoder push: that LFO's shape
-#                     hold + its own pot: that LFO's depth
+#                     hold + its own pot: the depth of what it drives
 #   encoder turn .... waveform, when no top pad is held
 #   encoder push .... pitch snap: semitones / free, when none is held
 #   up / down ....... octave all eight pots reach
@@ -91,7 +91,10 @@ CUT_MIN = 150.0
 CUT_MAX = 6000.0  # under 0.45 * 22050, so the fallback rate is safe too
 FILT_Q = 0.9
 
+# one bit per destination: apply_mod and mod_color test them with &
 MODE_OFF, MODE_PITCH, MODE_VOL = 0, 1, 2
+MODE_BOTH = MODE_PITCH | MODE_VOL
+NUM_MODES = 4
 
 # waveform names, from _builders in synthtools/waves.py
 WAVES = ("SIN", "TRI", "SAW", "SQU", "ASAW", "ATRI", "ASQU", "SSQU")
@@ -116,7 +119,6 @@ s.leds.auto_write = False
 s.leds.brightness = 0.3
 
 sio = synthio.Synthesizer(sample_rate=s.sample_rate, channel_count=s.channel_count)
-s.mixer.voice[0].play(sio)
 s.mixer.voice[0].level = 1.0
 
 cut_blk = scalar_block(3000.0)
@@ -132,9 +134,13 @@ wave_i = 2  # SAW
 wave_buf = np.zeros(WAVE_SIZE, dtype=np.int16)
 
 notes = []
-lfos = []
+# Two LFOs per oscillator so pitch and volume can run at once: one block
+# holds one scale and one offset, and the two destinations need different
+# ones. Same rate, phase and waveform buffer, so they ping together.
+bend_lfos = []
+amp_lfos = []
 lfo_wave = [0] * NUM_OSC
-# One buffer per LFO, written in place by set_lfo_wave(): synthio's
+# One buffer per oscillator, written in place by set_lfo_wave(): synthio's
 # LFO.waveform is read-only once the LFO is built.
 lfo_bufs = [np.zeros(LFO_WAVE_SIZE, dtype=np.int16) for _ in range(NUM_OSC)]
 for i in range(NUM_OSC):
@@ -150,12 +156,17 @@ for i in range(NUM_OSC):
                                   Q=q_blk),
         )
     )
-    lfo = synthio.LFO(waveform=lfo_bufs[i], rate=RATES[i],
-                      phase_offset=i / NUM_OSC)
-    lfos.append(lfo)
-    # Unattached blocks freeze, so an LFO routed nowhere, or whose
-    # oscillator is out, would jump phase the moment it came back.
-    sio.blocks.append(lfo)
+    for lst in (bend_lfos, amp_lfos):
+        lfo = synthio.LFO(waveform=lfo_bufs[i], rate=RATES[i],
+                          phase_offset=i / NUM_OSC)
+        lst.append(lfo)
+        # Unattached blocks freeze, so an LFO routed nowhere, or whose
+        # oscillator is out, would jump phase the moment it came back.
+        sio.blocks.append(lfo)
+
+# Audio only starts here: a background refill landing between a pair's
+# two appends would leave them a buffer out of step for good.
+s.mixer.voice[0].play(sio)
 
 oct_i = 1
 base_note = OCT_BASES[oct_i]
@@ -166,8 +177,9 @@ pot_until = [0.0] * NUM_OSC  # when this pot's move window closes
 on = [False] * NUM_OSC
 mode = [MODE_OFF] * NUM_OSC
 oct_off = [0] * NUM_OSC  # per-oscillator shift, from a held bottom pad
-depth = [DEPTH_INIT] * NUM_OSC  # per-oscillator LFO depth
-mod_scale = 1.0  # the right slider, over all eight depths at once
+bend_depth = [DEPTH_INIT] * NUM_OSC  # per-oscillator pitch LFO depth
+amp_depth = [DEPTH_INIT] * NUM_OSC  # per-oscillator volume LFO depth
+mod_scale = 1.0  # the right slider, over all sixteen depths at once
 press_at = [0.0] * 16  # when each pad went down, by pad not by oscillator
 adjusted = [False] * 16  # this press has modified something, so it is no tap
 adjust = None  # oscillator whose top pad is down, the one a knob/encoder steers
@@ -207,7 +219,7 @@ def read_pots():
                 # relative, so depth does not jump to wherever the pitch
                 # left the knob; the pitch itself stays where it was until
                 # the pot is turned again with the pad up
-                set_depth(i, depth[i] + v - pot_raw[i])
+                nudge_depth(i, v - pot_raw[i])
                 pot_raw[i] = v
                 pot_until[i] = 0.0
                 adjusted[8 + i] = True
@@ -227,32 +239,31 @@ def unipolar(i):
 
 
 def apply_mod(i):
-    """Route oscillator i's LFO: to pitch, to volume, or nowhere."""
-    lfo, note = lfos[i], notes[i]
-    d = depth[i] * mod_scale
-    if mode[i] == MODE_PITCH:
-        lfo.offset = 0.0
-        lfo.scale = d * PITCH_MOD_MAX
-        note.amplitude = OSC_AMP
-        note.bend = lfo
-    elif mode[i] == MODE_VOL:
-        # either way the swing stays at or above zero: a negative amplitude
-        # flips phase instead of going quiet, which tremolos at twice the rate
-        if unipolar(i):
-            lfo.scale = OSC_AMP * d
-            lfo.offset = OSC_AMP * (1 - d)
-        else:
-            lfo.scale = OSC_AMP * d / 2
-            lfo.offset = OSC_AMP * (1 - d / 2)
-        note.bend = 0.0
-        note.amplitude = lfo
+    """Scale both of oscillator i's LFOs, then route either, both or
+    neither."""
+    note, alfo = notes[i], amp_lfos[i]
+    bend_lfos[i].scale = bend_depth[i] * mod_scale * PITCH_MOD_MAX
+    d = amp_depth[i] * mod_scale
+    # either way the swing stays at or above zero: a negative amplitude
+    # flips phase instead of going quiet, which tremolos at twice the rate
+    if unipolar(i):
+        alfo.scale = OSC_AMP * d
+        alfo.offset = OSC_AMP * (1 - d)
     else:
-        note.bend = 0.0
-        note.amplitude = OSC_AMP
+        alfo.scale = OSC_AMP * d / 2
+        alfo.offset = OSC_AMP * (1 - d / 2)
+    note.bend = bend_lfos[i] if mode[i] & MODE_PITCH else 0.0
+    note.amplitude = alfo if mode[i] & MODE_VOL else OSC_AMP
 
 
-def set_depth(i, v):
-    depth[i] = min(max(v, 0.0), 1.0)
+def nudge_depth(i, d):
+    """Move the depths oscillator i's LFO is driving, both if it is off:
+    the knob would have nothing to do otherwise."""
+    m = mode[i] or MODE_BOTH
+    if m & MODE_PITCH:
+        bend_depth[i] = min(max(bend_depth[i] + d, 0.0), 1.0)
+    if m & MODE_VOL:
+        amp_depth[i] = min(max(amp_depth[i] + d, 0.0), 1.0)
     apply_mod(i)
 
 
@@ -280,10 +291,11 @@ def set_lfo_wave(i, w):
 
 def set_rate(i, d):
     """Move LFO i by d encoder clicks, in steps that shrink as it slows."""
-    lfo = lfos[i]
-    frac = min(max(math.log(lfo.rate / RATE_MIN) / RATE_SPAN, 0.0), 1.0)
+    rate = bend_lfos[i].rate
+    frac = min(max(math.log(rate / RATE_MIN) / RATE_SPAN, 0.0), 1.0)
     step = RATE_STEP_LO + (RATE_STEP_HI - RATE_STEP_LO) * frac
-    lfo.rate = min(max(lfo.rate * step**d, RATE_MIN), RATE_MAX)
+    rate = min(max(rate * step**d, RATE_MIN), RATE_MAX)
+    bend_lfos[i].rate = amp_lfos[i].rate = rate  # one rate, or they drift apart
 
 
 def set_wave(i):
@@ -325,7 +337,7 @@ def check_pads():
                 if p < 8:
                     set_on(p, not on[p])
                 else:
-                    mode[p - 8] = (mode[p - 8] + 1) % 3
+                    mode[p - 8] = (mode[p - 8] + 1) % NUM_MODES
                     apply_mod(p - 8)
             if p >= 8 and adjust == p - 8:
                 adjust = None
@@ -424,23 +436,28 @@ def mod_color(i, steer):
     on the pad as well as the screen."""
     if mode[i] == MODE_OFF and i != steer:
         return (0, 0, 0)
-    lfo = lfos[i]
+    # the pair is in lockstep, so either one shows the rate; take the one
+    # with a swing, since a depth of zero has nothing to pulse with
+    lfo = bend_lfos[i] if bend_lfos[i].scale else amp_lfos[i]
     b = 1.0
-    if lfo.scale:  # zero depth leaves nothing to pulse with
+    if lfo.scale:
         v = (lfo.value - lfo.offset) / lfo.scale  # back to the raw shape
         b = 0.3 + 0.35 * (1.0 + (v * 2 - 1 if unipolar(i) else v))
     if i == steer:
         return (int(255 * b),) * 3
-    if mode[i] == MODE_PITCH:
-        return (0, int(255 * b), int(40 * b))
-    return (0, int(40 * b), int(255 * b))
+    g = 255 if mode[i] & MODE_PITCH else 40
+    bl = 255 if mode[i] & MODE_VOL else 40
+    return (0, int(g * b), int(bl * b))
 
 
 def pot_color(i, steer):
-    """Pot LED: its pitch, or magenta for its LFO depth while that is what
-    the knob is doing."""
-    lvl = int(6 + 249 * (depth[i] if i == steer else pot_pos[i]))
-    return (lvl, 0, lvl) if i == steer else (0, lvl, lvl)
+    """Pot LED: its pitch, or magenta for the LFO depth it is setting."""
+    if i != steer:
+        lvl = int(6 + 249 * pot_pos[i])
+        return (0, lvl, lvl)
+    d = bend_depth[i] if (mode[i] or MODE_BOTH) & MODE_PITCH else amp_depth[i]
+    lvl = int(6 + 249 * d)
+    return (lvl, 0, lvl)
 
 
 def update_leds():
@@ -467,8 +484,10 @@ def update_ui():
         ui.set_osc(i, pitch[i], mode[i], on[i])
     steer = steering()
     if steer is not None:
-        ui.set_status("LFO%d %s %s d%.2f" % (steer + 1, rate_text(lfos[steer].rate),
-                                            LFO_WAVES[lfo_wave[steer]], depth[steer]))
+        ui.set_status("L%d %s %s %d/%d" % (steer + 1, rate_text(bend_lfos[steer].rate),
+                                           LFO_WAVES[lfo_wave[steer]],
+                                           round(100 * bend_depth[steer]),
+                                           round(100 * amp_depth[steer])))
     else:
         ui.set_status("cut %4d  mod %.2f" % (cut_blk.a, mod_scale))
 
