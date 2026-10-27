@@ -21,6 +21,22 @@ built with the [earlephilhower rp2040 core][rp2040-core] and `arduino-cli`.
   [Mozzi](https://sensorium.github.io/Mozzi/), similar to hwtest2. <br>
    (saw oscillator, fixed lowpass, AR envelope, TRS + USB MIDI)
 
+- **wavesynth** -- wavetable synth using Mozzi, a port of
+  `circuitpython/wavesynth` (in progress). Shares the board's
+  CIRCUITPY drive over USB for `/wavetables` and `/patches`.
+
+## Libraries
+
+- **libraries/FlashDisk** -- serves a microcontroller's flash as a FAT
+  USB drive, CircuitPython-style. See its `README.md`. Sketches use it
+  through a `- dir: ../libraries/FlashDisk` line in their
+  `sketch.yaml`. For the Arduino IDE, which ignores `sketch.yaml`,
+  symlink it into your libraries folder:
+
+  ```sh
+  ln -s "$PWD/libraries/FlashDisk" ~/Documents/Arduino/libraries/FlashDisk
+  ```
+
 ## sketch.yaml profiles
 
 Each sketch has a [`sketch.yaml`][sketch-yaml] pinning the exact
