@@ -6,7 +6,7 @@
 # dronesynth with a wavetable where its waveform was. The eight pots are
 # still the pitches, one per oscillator, but each oscillator now also has
 # its own position in one shared wavetable, and that position is what its
-# LFO sweeps: a drone that moves in timbre rather than in tune.
+# wave LFO sweeps: a drone that moves in timbre rather than in tune.
 #
 # Eight synthio Notes pressed and released in place, not a synthtools
 # Synth: a Synth's voices are keyed to midi notes and built at note_on.
@@ -17,12 +17,13 @@
 #   8 pots .......... oscillator pitch, 2 octaves each
 #   bottom pads ..... tap: oscillator in / out
 #                     hold + up/down: shift that one by an octave
-#                     hold + its own pot: where in the table it sits
+#                     hold + its own pot: that oscillator's level
 #   top pads ........ tap: LFO off -> wave -> volume -> both
-#                     hold + encoder: that LFO's rate
-#                     hold + encoder push: that LFO's shape
+#                     hold + encoder: the routed LFO's rate
+#                     hold + encoder push: the routed LFO's shape
 #                     hold + its own pot: the depth of what it drives,
 #                     which on wave is how far the sweep reaches
+#   both pads ....... hold + its own pot: where in the table it starts
 #   encoder turn .... wavetable, when no top pad is held
 #   encoder push .... pitch snap: semitones / free, when none is held
 #   up / down ....... octave all eight pots reach
@@ -85,12 +86,12 @@ WAVE_SPREAD = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
 # always clears it, so this only gates oscillators that are sitting still.
 WAVE_EPS = 0.01
 
-# Mutually non-harmonic defaults, so eight free LFOs never line up.
+# Mutually non-harmonic defaults, so free LFOs never line up.
 RATES = (0.11, 0.17, 0.23, 0.31, 0.43, 0.57, 0.77, 1.03)
-RATE_MIN, RATE_MAX = 0.02, 20.0
+RATE_MIN, RATE_MAX = 0.02, 10.0
 RATE_SPAN = math.log(RATE_MAX / RATE_MIN)
 # A click is this much of a step, interpolated across the range: 4% down
-# at 50s a cycle, 30% at 20Hz
+# at 50s a cycle, 30% at 10Hz
 RATE_STEP_LO, RATE_STEP_HI = 1.04, 1.30
 LFO_WAVES = ("TRI", "D10", "D30", "D50", "D70", "D90")
 # fraction of the cycle each decay takes, D50 where the square used to be
@@ -109,6 +110,8 @@ FILT_Q = 0.9
 MODE_OFF, MODE_WAVE, MODE_VOL = 0, 1, 2
 MODE_BOTH = MODE_WAVE | MODE_VOL
 NUM_MODES = 4
+# lfos, shapes and lfo_bufs are all indexed in this order
+DEST_BITS = (MODE_WAVE, MODE_VOL)
 
 # The strips are used as four buttons, not as positions: their continuous
 # value reads too roughly on this board to play with. Touch ids from
@@ -167,15 +170,17 @@ notes = []
 # One waveform buffer per oscillator, unlike dronesynth's single shared
 # one: eight independent wave positions are eight different waves.
 wave_bufs = [np.zeros(WAVE_SIZE, dtype=np.int16) for _ in range(NUM_OSC)]
-# Two LFOs per oscillator so wave and volume can run at once: one block
-# holds one scale and one offset, and the two destinations need different
-# ones. Same rate, phase and waveform buffer, so they ping together.
+# Two independent LFOs per oscillator, one per destination: one block
+# holds one scale and one offset, and wave and volume want their own rate
+# and shape as well.
 wave_lfos = []
 amp_lfos = []
-lfo_wave = [0] * NUM_OSC
-# One buffer per oscillator, written in place by set_lfo_wave(): synthio's
+lfos = (wave_lfos, amp_lfos)
+shapes = ([0] * NUM_OSC, [0] * NUM_OSC)
+# One buffer per LFO, written in place by set_lfo_wave(): synthio's
 # LFO.waveform is read-only once the LFO is built.
-lfo_bufs = [np.zeros(LFO_WAVE_SIZE, dtype=np.int16) for _ in range(NUM_OSC)]
+lfo_bufs = tuple([np.zeros(LFO_WAVE_SIZE, dtype=np.int16) for _ in range(NUM_OSC)]
+                 for _ in DEST_BITS)
 for i in range(NUM_OSC):
     notes.append(
         synthio.Note(
@@ -189,10 +194,13 @@ for i in range(NUM_OSC):
                                   Q=q_blk),
         )
     )
-    for lst in (wave_lfos, amp_lfos):
-        lfo = synthio.LFO(waveform=lfo_bufs[i], rate=RATES[i],
+    for d in range(len(DEST_BITS)):
+        # volume takes the rates backwards, so a pair starts apart: a click
+        # moves both while both are routed, and equal rates stay equal
+        lfo = synthio.LFO(waveform=lfo_bufs[d][i],
+                          rate=RATES[i if d == 0 else NUM_OSC - 1 - i],
                           phase_offset=i / NUM_OSC)
-        lst.append(lfo)
+        lfos[d].append(lfo)
         # Nothing in synthio reads the wave LFO at all and the volume one
         # is unread while it is routed nowhere. An unattached block freezes,
         # so both have to be rooted here to keep running.
@@ -214,6 +222,7 @@ oct_off = [0] * NUM_OSC  # per-oscillator shift, from a held bottom pad
 wave_start = list(WAVE_SPREAD)  # fraction of the table each one starts at
 wave_range = [DEPTH_INIT] * NUM_OSC  # how far up the table its LFO sweeps
 amp_depth = [DEPTH_INIT] * NUM_OSC  # per-oscillator volume LFO depth
+level = [1.0] * NUM_OSC  # per-oscillator volume, OSC_AMP being all of it
 wave_at = [-1.0] * NUM_OSC  # wave each buffer was last filled with
 mod_scale = 1.0  # the right slider, over all sixteen depths at once
 press_at = [0.0] * 16  # when each pad went down, by pad not by oscillator
@@ -246,26 +255,40 @@ def set_pitch(i, pos):
     notes[i].frequency = note_hz(n)
 
 
+def no_tap(p):
+    """This press has done something, so its release is no tap. Both of a
+    two-pad chord are spent: lifting the other one would fire its tap."""
+    adjusted[p] = True
+    other = p - 8 if p >= 8 else p + 8
+    if last_steps[other]:
+        adjusted[other] = True
+
+
 def pot_grab(i, v, pad):
     """A pot steered by a held pad moves what it steers RELATIVELY, so the
     pitch neither jumps nor follows, and the press is no longer a tap."""
     pot_raw[i] = v
     pot_until[i] = 0.0
-    adjusted[pad] = True
+    no_tap(pad)
 
 
 def read_pots():
     now = time.monotonic()
     for i, v in enumerate(s.pots):
         moved = abs(v - pot_raw[i]) > POT_MOVE
+        if last_steps[i] and last_steps[8 + i]:  # both of its pads: the start
+            if moved:
+                nudge_start(i, v - pot_raw[i])
+                pot_grab(i, v, i)
+            continue
         if last_steps[8 + i]:  # held top pad: this pot is that LFO's depth
             if moved:
                 nudge_depth(i, v - pot_raw[i])
                 pot_grab(i, v, 8 + i)
             continue
-        if last_steps[i]:  # held bottom pad: its place in the table
+        if last_steps[i]:  # held bottom pad: that oscillator's volume
             if moved:
-                nudge_start(i, v - pot_raw[i])
+                nudge_level(i, v - pot_raw[i])
                 pot_grab(i, v, i)
             continue
         if moved:
@@ -277,34 +300,40 @@ def read_pots():
         set_pitch(i, pot_pos[i])
 
 
-def unipolar(i):
+def unipolar(i, d):
     """A decay shape runs 1 down to 0, the triangle -1 to 1."""
-    return LFO_DECAY[lfo_wave[i]] is not None
+    return LFO_DECAY[shapes[d][i]] is not None
+
+
+def primary(i):
+    """The destination a held pad steers first: wave, unless the mode
+    routes volume alone. What the screen and the white pad LED follow."""
+    return 1 if mode[i] == MODE_VOL else 0
 
 
 def apply_mod(i):
     """Scale both of oscillator i's LFOs, then route either, both or
     neither. Only the volume route is a synthio connection; the wave one
     is update_waves() reading the block."""
-    uni = unipolar(i)
     # the sweep runs UP from the start wave whatever the shape, so the start
     # is a floor and not a midpoint
     span = wave_range[i] * mod_scale * top_wave
+    uni = unipolar(i, 0)
     wave_lfos[i].scale = span if uni else span / 2
     wave_lfos[i].offset = 0.0 if uni else span / 2
     # either way the swing stays at or above zero: a negative amplitude
     # flips phase instead of going quiet, which tremolos at twice the rate
+    amp = OSC_AMP * level[i]
     d = amp_depth[i] * mod_scale
-    if not uni:
+    if not unipolar(i, 1):
         d /= 2
-    amp_lfos[i].scale = OSC_AMP * d
-    amp_lfos[i].offset = OSC_AMP * (1 - d)
-    notes[i].amplitude = amp_lfos[i] if mode[i] & MODE_VOL else OSC_AMP
+    amp_lfos[i].scale = amp * d
+    amp_lfos[i].offset = amp * (1 - d)
+    notes[i].amplitude = amp_lfos[i] if mode[i] & MODE_VOL else amp
 
 
 def nudge_depth(i, d):
-    """Move the depths oscillator i's LFO is driving, both if it is off:
-    the knob would have nothing to do otherwise."""
+    """Move the depths oscillator i's routed LFOs carry."""
     m = mode[i] or MODE_BOTH
     if m & MODE_WAVE:
         wave_range[i] = min(max(wave_range[i] + d, 0.0), 1.0)
@@ -316,6 +345,11 @@ def nudge_depth(i, d):
 def nudge_start(i, d):
     wave_start[i] = min(max(wave_start[i] + d, 0.0), 1.0)
     fill_wave(i)
+
+
+def nudge_level(i, d):
+    level[i] = min(max(level[i] + d, 0.0), 1.0)
+    apply_mod(i)
 
 
 def set_mod_scale(v):
@@ -364,9 +398,9 @@ def set_table(i):
         fill_wave(j)
 
 
-def set_lfo_wave(i, w):
-    lfo_wave[i] = w
-    buf = lfo_bufs[i]
+def set_lfo_wave(i, d, w):
+    shapes[d][i] = w
+    buf = lfo_bufs[d][i]
     dec = LFO_DECAY[w]
     for j in range(LFO_WAVE_SIZE):
         p = j / LFO_WAVE_SIZE
@@ -379,13 +413,31 @@ def set_lfo_wave(i, w):
     apply_mod(i)
 
 
-def set_rate(i, d):
-    """Move LFO i by d encoder clicks, in steps that shrink as it slows."""
-    rate = wave_lfos[i].rate
-    frac = min(max(math.log(rate / RATE_MIN) / RATE_SPAN, 0.0), 1.0)
-    step = RATE_STEP_LO + (RATE_STEP_HI - RATE_STEP_LO) * frac
-    rate = min(max(rate * step**d, RATE_MIN), RATE_MAX)
-    wave_lfos[i].rate = amp_lfos[i].rate = rate  # one rate, or they drift apart
+def routed(i):
+    """The destinations oscillator i's held pad steers: whichever its mode
+    routes, or both while it is off, where the knob would have nothing to
+    do otherwise."""
+    m = mode[i] or MODE_BOTH
+    return [d for d, bit in enumerate(DEST_BITS) if m & bit]
+
+
+def cycle_shape(i):
+    """Step the shape of the routed LFOs. In both mode they step together
+    from the wave one's, so shapes are set apart in wave or volume."""
+    rt = routed(i)
+    w = (shapes[rt[0]][i] + 1) % len(LFO_WAVES)
+    for d in rt:
+        set_lfo_wave(i, d, w)
+
+
+def set_rate(i, clicks):
+    """Move the routed LFOs by clicks encoder clicks, each in steps that
+    shrink as it slows, so a pair at different rates stays apart."""
+    for d in routed(i):
+        lfo = lfos[d][i]
+        frac = min(max(math.log(lfo.rate / RATE_MIN) / RATE_SPAN, 0.0), 1.0)
+        step = RATE_STEP_LO + (RATE_STEP_HI - RATE_STEP_LO) * frac
+        lfo.rate = min(max(lfo.rate * step**clicks, RATE_MIN), RATE_MAX)
 
 
 def set_cut(v):
@@ -438,7 +490,7 @@ def check_octave():
     for i in range(NUM_OSC):
         if last_steps[i]:  # a held bottom pad keeps the shift for itself
             oct_off[i] = min(max(oct_off[i] + 12 * d, -OCT_SHIFT), OCT_SHIFT)
-            adjusted[i] = True
+            no_tap(i)
             set_pitch(i, pot_pos[i])
             one = True
     if one:
@@ -459,13 +511,13 @@ def check_encoder():
             set_table((table_i + d) % len(TABLES))
         else:
             set_rate(adjust, d)
-            adjusted[8 + adjust] = True
+            no_tap(8 + adjust)
     if s.encoder_button.pressed:
         if adjust is None:
             quantize = not quantize
         else:
-            set_lfo_wave(adjust, (lfo_wave[adjust] + 1) % len(LFO_WAVES))
-            adjusted[8 + adjust] = True
+            cycle_shape(adjust)
+            no_tap(8 + adjust)
 
 
 def check_midi():
@@ -509,7 +561,8 @@ def check_sliders():
 def steering(off):
     """The oscillator whose pot a held pad in this row has taken over, once
     the press is too old to still turn into a tap. The top row steers its
-    LFO, the bottom row its place in the table."""
+    LFO, the bottom row its volume, the two together its place in the
+    table."""
     now = time.monotonic()
     for i in range(NUM_OSC):
         p = off + i
@@ -518,44 +571,65 @@ def steering(off):
     return None
 
 
+def steers():
+    """(both, lfo, osc): which oscillator each held-pad gesture has a knob
+    of, both pads of one column beating either of them alone."""
+    lfo, osc = steering(8), steering(0)
+    if lfo is not None and lfo == osc:
+        return lfo, None, None
+    return None, lfo, osc
+
+
+def pulse(i, d):
+    """0.3 to 1 following that LFO's shape, flat while it has no swing to
+    show, so a rate adjust reads on the pad as well as the screen."""
+    lfo = lfos[d][i]
+    if not lfo.scale:
+        return 1.0
+    v = (lfo.value - lfo.offset) / lfo.scale  # back to the raw shape
+    return 0.3 + 0.35 * (1.0 + (v * 2 - 1 if unipolar(i, d) else v))
+
+
 def mod_color(i, steer):
-    """Top-pad LED, pulsing at its own LFO's rate so a rate adjust shows up
-    on the pad as well as the screen."""
+    """Top-pad LED: green wave, blue volume, each pulsing at its own rate,
+    white while that pad is the one steering."""
     if mode[i] == MODE_OFF and i != steer:
         return (0, 0, 0)
-    # the pair is in lockstep, so either one shows the rate; take the one
-    # with a swing, since a depth of zero has nothing to pulse with
-    lfo = wave_lfos[i] if wave_lfos[i].scale else amp_lfos[i]
-    b = 1.0
-    if lfo.scale:
-        v = (lfo.value - lfo.offset) / lfo.scale  # back to the raw shape
-        b = 0.3 + 0.35 * (1.0 + (v * 2 - 1 if unipolar(i) else v))
     if i == steer:
+        b = pulse(i, primary(i))
         return (int(255 * b),) * 3
     g = 255 if mode[i] & MODE_WAVE else 40
     bl = 255 if mode[i] & MODE_VOL else 40
-    return (0, int(g * b), int(bl * b))
+    return (0, int(g * pulse(i, 0)), int(bl * pulse(i, 1)))
 
 
-def pot_color(i, lfo_steer, osc_steer):
-    """Pot LED: the wave that oscillator is reading, magenta while the knob
-    is setting a depth instead, amber while it is moving the wave."""
+def pot_color(i, st):
+    """Pot LED: the wave that oscillator is reading, white while the knob
+    is moving where it starts, magenta for a depth, amber for its volume."""
+    both, lfo_steer, osc_steer = st
+    if i == both:
+        lvl = int(6 + 249 * wave_start[i])
+        return (lvl, lvl, lvl)
     if i == lfo_steer:
-        d = wave_range[i] if (mode[i] or MODE_BOTH) & MODE_WAVE else amp_depth[i]
-        lvl = int(6 + 249 * d)
+        lvl = int(6 + 249 * (amp_depth[i] if primary(i) else wave_range[i]))
         return (lvl, 0, lvl)
+    if i == osc_steer:
+        lvl = int(6 + 249 * level[i])
+        return (lvl, lvl // 3, 0)
     lvl = int(6 + 249 * wave_pos(i) / top_wave)
-    return (lvl, lvl // 3, 0) if i == osc_steer else (0, lvl, lvl)
+    return (0, lvl, lvl)
 
 
 def update_leds():
-    lfo_steer, osc_steer = steering(8), steering(0)
+    st = steers()
+    both, lfo_steer, osc_steer = st
+    top = both if lfo_steer is None else lfo_steer
     s.step_leds = [(255, 60, 0) if on[i] else (0, 0, 0) for i in range(NUM_OSC)] + [
-        mod_color(i, lfo_steer) for i in range(NUM_OSC)
+        mod_color(i, top) for i in range(NUM_OSC)
     ]
-    s.pot_leds = [pot_color(i, lfo_steer, osc_steer) for i in range(NUM_OSC)]
+    s.pot_leds = [pot_color(i, st) for i in range(NUM_OSC)]
     s.mode_led = 0x002222 if quantize else 0x000000
-    s.edit_led = 0x222200 if lfo_steer is not None or osc_steer is not None else 0x000000
+    s.edit_led = 0x222200 if any(x is not None for x in st) else 0x000000
     s.play_led = 0x003311 if any(on) else 0x000000
     s.leds.show()
 
@@ -570,16 +644,26 @@ def update_ui():
     ui.set_header(TABLE_NAMES[table_i], "semi" if quantize else "free")
     for i in range(NUM_OSC):
         ui.set_osc(i, pitch[i], mode[i], on[i])
-    lfo_steer, osc_steer = steering(8), steering(0)
-    if lfo_steer is not None:
-        ui.set_status("L%d %s %s %d/%d" % (lfo_steer + 1,
-                                           rate_text(wave_lfos[lfo_steer].rate),
-                                           LFO_WAVES[lfo_wave[lfo_steer]],
-                                           round(100 * wave_range[lfo_steer]),
-                                           round(100 * amp_depth[lfo_steer])))
+    both, lfo_steer, osc_steer = steers()
+    if both is not None:
+        ui.set_status("O%d start %.1f of %d"
+                      % (both + 1, wave_start[both] * top_wave, top_wave))
+    elif lfo_steer is not None:
+        i = lfo_steer
+        d = primary(i)
+        rt = rate_text(lfos[d][i].rate)
+        sh = LFO_WAVES[shapes[d][i]]
+        if mode[i] in (MODE_OFF, MODE_BOTH):  # one encoder click moves both
+            ui.set_status("L%d %s %s %d/%d" % (i + 1, rt, sh,
+                                               round(100 * wave_range[i]),
+                                               round(100 * amp_depth[i])))
+        else:
+            ui.set_status("L%d %s %s %s %d%%"
+                          % (i + 1, "WV"[d], rt, sh,
+                             round(100 * (wave_range[i] if d == 0 else amp_depth[i]))))
     elif osc_steer is not None:
-        ui.set_status("O%d wave %.1f of %d"
-                      % (osc_steer + 1, wave_pos(osc_steer), top_wave))
+        ui.set_status("O%d volume %d%%"
+                      % (osc_steer + 1, round(100 * level[osc_steer])))
     else:
         ui.set_status("cut %4d  mod %.2f" % (cut_blk.a, mod_scale))
 
@@ -590,7 +674,8 @@ for _i, _v in enumerate(s.pots):  # relic primes the ADCs, so these are good now
 
 set_table(table_i)  # fills every buffer, so nothing starts on a silent one
 for _i in range(NUM_OSC):
-    set_lfo_wave(_i, 0)
+    for _d in range(len(DEST_BITS)):
+        set_lfo_wave(_i, _d, 0)
 set_cut(CUT_INIT)
 set_on(0, True)  # one oscillator sounding at boot, so the audio chain shows
 

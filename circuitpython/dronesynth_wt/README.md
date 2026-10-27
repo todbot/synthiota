@@ -2,8 +2,8 @@
 
 `dronesynth` with a wavetable where its waveform was. Eight drone
 oscillators, each tuned by its own knob, and each sitting at its own
-position in one shared wavetable. What an oscillator's LFO sweeps is
-that position, not its pitch: a drone that moves in timbre while it
+position in one shared wavetable. What an oscillator's wave LFO sweeps
+is that position, not its pitch: a drone that moves in timbre while it
 stays in tune.
 
 Everything else is dronesynth. There is no scale, no sequencer and
@@ -19,20 +19,30 @@ The pad grid is split the way the controls are: the **bottom row** is
 the oscillator, the **top row** is its LFO.
 
 Tap a bottom pad to switch its oscillator in and out. Hold it and turn
-that oscillator's own knob to move it through the table, or hold it and
-use up/down to shift it an octave.
+that oscillator's own knob for its volume, or hold it and use up/down to
+shift it an octave.
 
 Tap a top pad to cycle its LFO: off, wave (green), volume (blue), both
-at once (cyan). Hold the pad and turn the encoder for that LFO's rate,
-from one cycle every 50 seconds to 20 Hz, press the encoder for its
-shape, or turn that oscillator's own knob for its depth. On wave, depth
-is how far up the table the sweep reaches; wave and volume keep separate
-depths, so tap to wave and set the range, tap to volume and set that,
-and both are remembered when you tap to both.
+at once (cyan). Hold the pad and turn the encoder for the rate of
+whichever of the two it is driving, from one cycle every 50 seconds to
+10 Hz, press the encoder for that one's shape, or turn that
+oscillator's own knob for its depth. On wave, depth is how far up the
+table the sweep reaches.
 
-So the three things a sweep needs are three gestures: **start** is a
-held bottom pad plus the knob, **range** a held top pad plus the knob,
-**rate** a held top pad plus the encoder.
+Wave and volume are two separate LFOs, each with its own rate, shape
+and depth, and a held top pad reaches whichever of them the mode is
+driving. So tap to wave and set its rate, shape and range, tap to
+volume and set that one, and both are remembered when you tap to both.
+In both mode the pair moves together: a click of the encoder is a click
+on each of them, a press puts both on the wave one's shape, and the
+screen shows the wave one.
+
+Hold a bottom pad **and** the top pad above it, then turn that
+oscillator's knob, to move where it starts in the table.
+
+So the three things a sweep needs are three gestures: **start** is both
+of a column's pads plus the knob, **range** a held top pad plus the
+knob, **rate** a held top pad plus the encoder.
 
 Both rows are tap-or-hold, and a tap acts when you lift: holding a pad
 makes it a modifier, so it never also switches an oscillator or cycles
@@ -46,15 +56,18 @@ running. Boots with oscillator 1 sounding.
 
 - 8 pots ......... oscillator pitch, 2 octaves per pot
 - bottom pads .... tap: oscillator in / out
-                   hold + its own pot: where in the table it sits
+                   hold + its own pot: that oscillator's volume
                    hold + up/down: shift that oscillator by an octave,
                    up to two either way
 - top pads ....... tap: LFO off -> wave -> volume -> both -> off
-                   hold + encoder turn: that LFO's rate
+                   hold + encoder turn: the rate of the LFO that
+                   oscillator drives, or both while it is off
                    hold + encoder press: that LFO's shape, cycling
                    TRI D10 D30 D50 D70 D90
                    hold + its own pot: the depth of what that LFO
-                   drives, or both depths while it is off
+                   drives, or both of them while it is off
+- both pads ...... hold + its own pot: where in the table that
+                   oscillator starts
 - encoder turn ... the wavetable, when no top pad is held
 - encoder press .. pitch snap: semitones / free, no top pad held
 - up / down ...... the octave all eight pots start from; oscillator 1-2
@@ -64,12 +77,13 @@ running. Boots with oscillator 1 sounding.
                    depths at once, down / up
                    hold either end and it repeats
 - bottom LEDs .... amber where an oscillator is in
-- top LEDs ....... green wave LFO, blue volume LFO, cyan both, pulsing
-                   at its own rate; white while a knob or the encoder
-                   is steering it
-- pot LEDs ....... where each oscillator is in the table, amber on the
-                   one knob that is moving it, magenta on the one that
-                   is setting a depth, showing that depth
+- top LEDs ....... green wave LFO, blue volume LFO, cyan both, each
+                   pulsing at its own rate; white while a knob or the
+                   encoder is steering it
+- pot LEDs ....... where each oscillator is in the table, white on the
+                   one knob that is moving where it starts, amber on the
+                   one setting a volume, magenta on the one setting a
+                   depth, each showing what it is setting
 - mode LED ....... lit while pitch snap is on
 - edit LED ....... lit while a held pad is steering
 - play LED ....... lit while any oscillator is in
@@ -77,10 +91,12 @@ running. Boots with oscillator 1 sounding.
                    Per oscillator: LFO mode (`.` `W` `V` `B`), the note
                    it is tuned to, and an underline while it sounds.
                    The status line is cutoff and the depth master, or
-                   `L4 18.9s D10 30/75` for whichever LFO is being
-                   steered (rate, shape, wave range and volume depth as
-                   percentages), or `O4 wave 12.4 of 63` for whichever
-                   oscillator is being moved through the table.
+                   `L4 W 18.9s D10 30%` for the LFO being steered (which
+                   of the two, its rate, its shape, its depth),
+                   `L4 18.9s D10 30/75` for the wave one plus both
+                   depths while the pair moves together, `O4 volume 80%`
+                   for an oscillator's level, or `O4 start 12.4 of 63`
+                   for where one starts in the table.
 
 The sweep always runs **up** from the start wave, whatever the shape, so
 the start is a floor and not a midpoint. A decay snaps to the top of the
@@ -95,15 +111,15 @@ are; each one lands on a semitone the next time its pot or an octave
 button moves it.
 
 The encoder's rate clicks are not evenly spaced: a click is 4% of the
-rate down at 50 seconds a cycle and 30% up at 20 Hz, so two thirds of
-the encoder's travel sits below 0.5 Hz where a drone lives. End to end
-is about 58 clicks.
+rate down at 50 seconds a cycle and 30% up at 10 Hz, so 38 of the 53
+clicks end to end sit below 0.5 Hz, where a drone lives.
 
 A wave sweep is pushed into the waveform buffers from the main loop, a
 few hundred times a second at best, so a sweep much above a few hertz
 will step. The heartbeat prints the loop rate it is actually getting.
-The volume LFO is sample-accurate however fast it goes, and the pair
-shares one rate, so a fast rate is still worth having.
+The volume LFO is sample-accurate however fast it goes, and it keeps
+its own rate, so the top of the range is worth having there even where
+a wave sweep cannot use it.
 
 ## MIDI
 
@@ -163,11 +179,20 @@ github.com/relic-se/CircuitPython_Synthiota
 - Each oscillator has its OWN waveform buffer, where dronesynth shares
   one between all eight. That is the whole difference in the audio
   graph: eight positions cannot share a buffer.
-- Wave and volume run off separate LFO blocks, two per oscillator,
-  because one block carries one scale and one offset and the two
-  destinations need different ones. They share the waveform buffer and
-  take the same rate from the same nudge, so they ping together, but
-  they carry their own depths.
+- Wave and volume are an LFO each, two per oscillator, fully
+  independent: own rate, own shape buffer, own depth. One block carries
+  one scale and one offset, so the two destinations needed two blocks
+  whatever happened. Both are scaled whatever the mode is, which leaves
+  the pad LED a swing to pulse with and makes a mode change nothing but
+  a reroute.
+- The volume LFOs take the eight default rates backwards, so no pair
+  starts together. A click of the encoder with both routed is a click on
+  each of them, which holds a ratio but cannot open one up: two LFOs
+  left at the same rate would stay there for good.
+- A per-oscillator level scales `OSC_AMP`, and the volume LFO swings
+  under that level rather than around it, so eight oscillators at full
+  level are still the eight that were measured against the soft knee.
+  The knob reaches 1.0 and stops.
 - Nothing in synthio reads the wave LFO: a waveform is a plain buffer,
   not a block-driven parameter, so the only thing that moves it is
   `update_waves()` reading `lfo.value` from the loop. Both LFOs are
@@ -211,9 +236,9 @@ github.com/relic-se/CircuitPython_Synthiota
   of their own to show the value with -- relic's `left_slider_leds` are
   the same pixels as pot LEDs 1-3 -- so the screen's `cut` and `mod`
   readout is the indicator.
-- Each LFO owns a 128-sample waveform buffer that its shape is written
-  into in place, because `synthio.LFO.waveform` is read-only once the
-  LFO is built.
+- Each of the sixteen LFOs owns a 128-sample waveform buffer that its
+  shape is written into in place, because `synthio.LFO.waveform` is
+  read-only once the LFO is built. 4 KB for the lot.
 - Each oscillator carries its own `synthio.Biquad` because filters hold
   state and cannot be shared; the cutoff and Q are shared blocks, so the
   slider is one write for all eight.

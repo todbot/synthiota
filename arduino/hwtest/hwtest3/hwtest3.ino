@@ -34,7 +34,7 @@ Oscil<SAW2048_NUM_CELLS, MOZZI_AUDIO_RATE> osc(SAW2048_DATA);
 ADSR<MOZZI_AUDIO_RATE, MOZZI_AUDIO_RATE> env;
 LowPassFilter filt;
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDIuart);
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDIuart);
 
 Adafruit_USBD_MIDI usb_midi;
 MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDIusb);
@@ -79,8 +79,8 @@ void setup() {
 
   startMozzi();
 
-  Serial2.setRX(uart_rx_pin);
-  Serial2.setTX(uart_tx_pin);
+  Serial1.setRX(uart_rx_pin);
+  Serial1.setTX(uart_tx_pin);
   MIDIuart.begin(MIDI_CHANNEL_OMNI);
   MIDIuart.setHandleNoteOn(uartNoteOn);
   MIDIuart.setHandleNoteOff(uartNoteOff);
