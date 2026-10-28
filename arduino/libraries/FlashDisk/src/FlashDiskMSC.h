@@ -42,6 +42,21 @@ class FlashDiskMSC {
     return true;
   }
 
+  // cb runs on the first host write of a burst, before any of it reaches
+  // flash: the erases that follow stall both cores for tens of ms each,
+  // so e.g. fade audio out here and wait for the output buffers to drain.
+  // Runs in the USB task's context, so busy-wait rather than delay().
+  void onWriteBegin(void (*cb)(), uint32_t quiet_ms = 300) {
+    writeBegin_ = cb;
+    quietMs_ = quiet_ms;
+  }
+
+  // true from the first write of a burst until the host has been quiet
+  // (no writes or flushes) for onWriteBegin()'s quiet_ms
+  bool hostActive() {
+    return lastActivity_ && millis() - lastActivity_ < quietMs_;
+  }
+
   // false tells the host the medium is gone, e.g. while the sketch itself
   // writes the volume; true again makes the host re-read it
   void setUnitReady(bool ready) { msc_.setUnitReady(ready); }
@@ -54,6 +69,9 @@ class FlashDiskMSC {
   FatVolume *fs_ = nullptr;
   volatile bool dirty_ = false;
   volatile uint32_t lastFlush_ = 0;
+  volatile uint32_t lastActivity_ = 0;
+  uint32_t quietMs_ = 300;
+  void (*writeBegin_)() = nullptr;
 
   static FlashDiskMSC *&self() {
     static FlashDiskMSC *p = nullptr;
@@ -64,13 +82,16 @@ class FlashDiskMSC {
     return self()->disk_->readSectors(lba, (uint8_t *)buf, len / 512) ? len : -1;
   }
   static int32_t writeCB(uint32_t lba, uint8_t *buf, uint32_t len) {
-    return self()->disk_->writeSectors(lba, buf, len / 512) ? len : -1;
+    FlashDiskMSC *d = self();
+    if (d->writeBegin_ && !d->hostActive()) d->writeBegin_();
+    d->lastActivity_ = millis();
+    return d->disk_->writeSectors(lba, buf, len / 512) ? len : -1;
   }
   static void flushCB() {
     FlashDiskMSC *d = self();
     d->disk_->syncDevice();
     if (d->fs_) d->fs_->cacheClear();
-    d->lastFlush_ = millis();
+    d->lastFlush_ = d->lastActivity_ = millis();
     d->dirty_ = true;
   }
 };

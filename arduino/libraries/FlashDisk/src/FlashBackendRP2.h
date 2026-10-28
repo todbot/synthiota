@@ -8,6 +8,7 @@
 #pragma once
 #if defined(ARDUINO_ARCH_RP2040)
 #include <Arduino.h>
+#include <hardware/dma.h>
 #include <hardware/flash.h>
 #include <hardware/sync.h>
 #include "FlashDisk.h"
@@ -50,14 +51,49 @@ class FlashBackendRP2 : public FlashBackend {
     memcpy(dst, (const void *)(XIP_BASE + start + addr), len);
   }
 
-  // code runs from this flash (XIP), so the other core is parked and this
-  // core has interrupts off (lock()) for the whole erase + program
+  // Code runs from this flash (XIP), so the other core is parked and this
+  // core has interrupts off (lock()) for the whole erase + program. DMA is
+  // paused too: chained channels whose IRQ can't run meanwhile (e.g. I2S
+  // audio) restart past the end of their buffers and stream random RAM.
   bool eraseProgram(uint32_t addr, const uint8_t *src) override {
+    uint32_t busy, idle;
+    pauseDMA(busy, idle);
     rp2040.idleOtherCore();
     flash_range_erase(start + addr, FLASH_SECTOR_SIZE);
     flash_range_program(start + addr, src, FLASH_SECTOR_SIZE);
     rp2040.resumeOtherCore();
+    resumeDMA(busy, idle);
     return true;
+  }
+
+  // Clearing EN pauses a busy channel mid-transfer; setting it resumes.
+  // A disabled channel also ignores chain triggers, so a chain target must
+  // never be off while its source can still finish: pause busy channels
+  // before idle ones, and resume idle ones first.
+  static void pauseDMA(uint32_t &busy, uint32_t &idle) {
+    busy = idle = 0;
+    for (uint ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
+      if (dma_hw->ch[ch].al1_ctrl & DMA_CH0_CTRL_TRIG_BUSY_BITS) {
+        busy |= 1u << ch;
+        hw_clear_bits(&dma_hw->ch[ch].al1_ctrl, DMA_CH0_CTRL_TRIG_EN_BITS);
+      }
+    }
+    for (uint ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
+      if (!(busy & (1u << ch)) &&
+          (dma_hw->ch[ch].al1_ctrl & DMA_CH0_CTRL_TRIG_EN_BITS)) {
+        idle |= 1u << ch;
+        hw_clear_bits(&dma_hw->ch[ch].al1_ctrl, DMA_CH0_CTRL_TRIG_EN_BITS);
+      }
+    }
+  }
+  static void resumeDMA(uint32_t busy, uint32_t idle) {
+    for (uint32_t set : {idle, busy}) {
+      for (uint ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
+        if (set & (1u << ch)) {
+          hw_set_bits(&dma_hw->ch[ch].al1_ctrl, DMA_CH0_CTRL_TRIG_EN_BITS);
+        }
+      }
+    }
   }
 
   uint32_t lock() override { return save_and_disable_interrupts(); }

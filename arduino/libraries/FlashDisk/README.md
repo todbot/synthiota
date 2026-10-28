@@ -92,6 +92,12 @@ layout like CircuitPython's.
 
 - Expect audio and other interrupt-driven work to stall while the host
   writes: each 4KB block erase takes tens of ms with interrupts off.
+  `FlashBackendRP2` pauses every DMA channel for that time: a chained
+  DMA (e.g. I2S audio) whose interrupt can't run otherwise restarts past
+  the end of its buffer and streams random RAM, which is loud noise.
+  Audio still drops out; `drive.onWriteBegin(cb)` runs `cb` before a
+  burst of host writes reaches flash, so a sketch can fade its output to
+  silence there, and back in once `drive.hostActive()` goes false.
 - Format only flash that has never been written (`sectorErased()`): an
   unmountable volume that isn't blank may still hold someone's files.
 - Two FAT writers at once corrupt a volume. Let the host own the drive;
