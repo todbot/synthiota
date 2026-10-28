@@ -7,11 +7,13 @@
 //                 on CircuitPython's CIRCUITPY partition, holding
 //                 /wavetables and /patches. Program change or serial
 //                 'w'/'W' picks the table, CC1 or serial ','/'.' moves
-//                 through it.
+//                 through it; serial 'p'/'P' picks a param, '['/']'
+//                 changes it, '?' lists them (until the pots exist).
 //
 // core0: USB (MIDI, MSC), UART MIDI, files. core1: Mozzi audio.
 // Audio drops out while the host writes the drive: every flash write
-// idles core1. The drive is the FlashDisk library (../libraries/FlashDisk).
+// idles core1, so the output is faded to silence for each burst of host
+// writes. The drive is the FlashDisk library (../libraries/FlashDisk).
 //
 // Needs the "Adafruit TinyUSB" USB Stack and a no-FS Flash Size option
 // (see sketch.yaml / arduino/README.md).
@@ -22,8 +24,6 @@
 #define MOZZI_CONTROL_RATE 512  // also how often core1 drains note_queue
 
 #include <Mozzi.h>
-#include <ADSR.h>
-#include <mozzi_midi.h>
 
 #include <FlashDisk.h>
 #include <FlashBackendRP2.h>
@@ -32,7 +32,7 @@
 #include <FlashDiskMSC.h>
 #include <MIDI.h>
 #include "wavetable.h"
-#include "wave_osc.h"
+#include "synth_engine.h"
 
 #define uart_rx_pin  17
 #define uart_tx_pin  16
@@ -44,11 +44,13 @@
 #define AUDIO_ON_CORE1 1
 #endif
 
-WaveOsc osc;
-ADSR<MOZZI_AUDIO_RATE, MOZZI_AUDIO_RATE> env;
-// 0..65535 across whatever table core1 is playing, so it survives a swap
-// to a table with a different wave count
-volatile uint16_t wpos_norm = 0;
+Params params;  // core0 writes, core1 reads
+volatile bool audio_mute = false;
+volatile uint32_t ctl_ticks = 0;  // TODO: temp, core1 heartbeat for 'a'
+// > the 256-sample fade plus Mozzi's 256-sample output buffer (~16ms at
+// 32768Hz), so the DMA holds only silence when the first erase stalls it
+#define MUTE_DRAIN_MS 30
+Engine engine;  // core1 only
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDIuart);
 
@@ -90,7 +92,6 @@ uint32_t note_event(bool on, uint8_t note, uint8_t vel) {
 }
 
 volatile bool core0_ready = false;
-int current_note = -1;  // core1 only
 
 void touch_file(const char *path) {
   if (fatfs.exists(path)) return;
@@ -168,6 +169,12 @@ void load_wave(int idx) {
                 pending_waves, (unsigned long)(micros() - t));
 }
 
+// a stalled I2S DMA replays its last buffers: make them silent first
+void host_write_begin() {
+  audio_mute = true;
+  busy_wait_ms(MUTE_DRAIN_MS);
+}
+
 void midiProgramChange(byte channel, byte program) {
   load_wave(program);
 }
@@ -175,14 +182,52 @@ void midiProgramChange(byte channel, byte program) {
 // one wave per step; rounds to the nearest wave so steps land on waves
 void nudge_wpos(int dir) {
   int span = wave_sel_waves > 1 ? wave_sel_waves - 1 : 1;
-  int w = (wpos_norm * span + 32767) / 65535 + dir;
-  w = w < 0 ? 0 : w > span ? span : w;
-  wpos_norm = w * 65535 / span;
+  int w = constrain((int)lroundf(params.wpos * span) + dir, 0, span);
+  params.wpos = (float)w / span;
   Serial.printf("wpos %d / %d\n", w, span);
 }
 
+struct ParamDef {
+  const char *name;
+  float *v;
+  float lo, hi, step;
+};
+// order and ranges from circuitpython/wavesynth's PARAMS; wlfo is 0..1
+// like wpos, not in waves
+const ParamDef param_defs[] = {
+  {"freq", &params.freq, 60, 8000, 100},   {"reso", &params.reso, 0.6, 6, 0.2},
+  {"ftype", &params.ftype, 0, 3, 1},       {"wlfo", &params.wlfo, 0, 1, 0.05},
+  {"wrate", &params.wrate, 0, 5, 0.1},     {"wshp", &params.wshp, 0, 1, 1},
+  {"w1x", &params.w1x, 0, 1, 1},           {"wvel", &params.wvel, 0, 1, 0.1},
+  {"atk", &params.atk, 0, 3, 0.05},        {"rel", &params.rel, 0, 3, 0.1},
+  {"fatk", &params.fatk, 0.01, 3, 0.05},   {"frel", &params.frel, 0.01, 3, 0.1},
+  {"famt", &params.famt, -4000, 6000, 250}, {"lamt", &params.lamt, 0, 4000, 200},
+  {"lrate", &params.lrate, 0, 8, 0.25},    {"vdep", &params.vdep, 0, 0.05, 0.002},
+  {"vrate", &params.vrate, 0.1, 12, 0.5},  {"pamt", &params.pamt, -0.5, 0.5, 0.05},
+  {"ptime", &params.ptime, 0.005, 1, 0.02}, {"vol", &params.vol, 0.1, 1, 0.05},
+};
+const int num_params = sizeof(param_defs) / sizeof(param_defs[0]);
+int param_sel = 0;
+
+const char *const FILTER_NAMES[] = {"LPF", "HPF", "BPF", "NOTCH"};
+
+void print_param(int i) {
+  const ParamDef &d = param_defs[i];
+  if (d.v == &params.ftype) {
+    Serial.printf("%-5s %s\n", d.name, FILTER_NAMES[(int)(*d.v + 0.5f)]);
+  } else {
+    Serial.printf("%-5s %.3f\n", d.name, *d.v);
+  }
+}
+
+void nudge_param(int dir) {
+  const ParamDef &d = param_defs[param_sel];
+  *d.v = constrain(*d.v + dir * d.step, d.lo, d.hi);
+  print_param(param_sel);
+}
+
 void midiControlChange(byte channel, byte cc, byte val) {
-  if (cc == 1) wpos_norm = val * 65535 / 127;
+  if (cc == 1) params.wpos = val / 127.0f;
 }
 
 void midiNoteOn(byte channel, byte pitch, byte velocity) {
@@ -214,6 +259,7 @@ void setup() {
 
   // after MIDI: either re-enumerates so the host sees every interface
   if (fits) {
+    drive.onWriteBegin(host_write_begin);
     drive.begin(disk, &fatfs, "synthiota", "wavesynth", "1.0");
   } else if (TinyUSBDevice.mounted()) {
     TinyUSBDevice.detach();
@@ -272,6 +318,23 @@ void check_serial() {
     case 'W': load_wave(wave_sel - 1); break;
     case '.': nudge_wpos(+1); break;
     case ',': nudge_wpos(-1); break;
+    case 'p': param_sel = (param_sel + 1) % num_params; print_param(param_sel); break;
+    case 'P': param_sel = (param_sel + num_params - 1) % num_params; print_param(param_sel); break;
+    case ']': nudge_param(+1); break;
+    case '[': nudge_param(-1); break;
+    case '?': for (int i = 0; i < num_params; i++) print_param(i); break;
+    case 'a':  // TODO: temp audio/DMA debug
+      Serial.printf("ctl_ticks %lu mute %d\n", (unsigned long)ctl_ticks, audio_mute);
+      for (uint ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
+        uint32_t c = dma_hw->ch[ch].al1_ctrl;
+        if (!(c & DMA_CH0_CTRL_TRIG_EN_BITS) && !dma_hw->ch[ch].transfer_count) continue;
+        Serial.printf("dma%u en %d busy %d count %lu read %08lx write %08lx\n", ch,
+                      !!(c & DMA_CH0_CTRL_TRIG_EN_BITS), !!(c & DMA_CH0_CTRL_TRIG_BUSY_BITS),
+                      (unsigned long)dma_hw->ch[ch].transfer_count,
+                      (unsigned long)dma_hw->ch[ch].read_addr,
+                      (unsigned long)dma_hw->ch[ch].write_addr);
+      }
+      break;
   }
 }
 
@@ -285,6 +348,7 @@ void loop() {
   MIDIusb.read();
 
   if (drive.changed()) wave_rescan();
+  if (audio_mute && !drive.hostActive()) audio_mute = false;
   if (wave_swaps != last_swaps) {
     last_swaps = wave_swaps;
     Serial.printf("core1 swapped in table (%lu swaps)\n", (unsigned long)last_swaps);
@@ -292,8 +356,6 @@ void loop() {
 }
 
 void audio_setup() {
-  env.setADLevels(255, 255);       // no decay stage -- attack straight to full level
-  env.setTimes(5, 1, 60000, 300);  // attack, decay, sustain hold, release (ms)
   startMozzi();
 }
 
@@ -310,27 +372,27 @@ void loop1() {
 #endif
 
 void updateControl() {
+  ctl_ticks++;
   wave_adopt();
-  osc.setTable(wt_table, wt_num_waves);
-  uint32_t span = wt_num_waves > 1 ? wt_num_waves - 1 : 0;
-  osc.setWavePos((uint32_t)wpos_norm * span);
   uint32_t ev;
   while (note_queue.pop(ev)) {
-    bool on = ev >> 16;
     uint8_t note = (ev >> 8) & 0xFF;
-    if (on) {
-      osc.setFreq(mtof(note));
-      env.noteOn();
-      current_note = note;
-    } else if (note == current_note) {
-      env.noteOff();
-      current_note = -1;
+    if (ev >> 16) {
+      engine.noteOn(note, ev & 0xFF, params);
+    } else {
+      engine.noteOff(note);
     }
   }
+  engine.control(params, wt_table, wt_num_waves);
 }
 
 AudioOutput updateAudio() {
-  env.update();
-  int32_t v = (int32_t)osc.next() * env.next();
-  return StereoOutput::fromNBit(24, v, v);
+  static int32_t fade = 256;  // ramps, so muting doesn't click
+  if (audio_mute) {
+    if (fade > 0) fade--;
+  } else if (fade < 256) {
+    fade++;
+  }
+  int32_t v = engine.next() * fade >> 8;
+  return StereoOutput::fromNBit(16, v, v).clip();
 }
