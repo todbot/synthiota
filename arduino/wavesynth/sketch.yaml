@@ -12,6 +12,12 @@ profiles:
       - Adafruit TinyUSB Library (3.7.7)
       - MIDI Library (5.0.2)
       - SdFat - Adafruit Fork (2.3.103)
+      - Adafruit MPR121 (1.2.1)
+      - Adafruit NeoPixel (1.15.5)
+      - Adafruit SH110X (2.1.15)
+      - Adafruit GFX Library (1.12.6)
+      - RotaryEncoder (1.6.0)
+      - dependency: Adafruit BusIO (1.17.4)
       - dir: ../libraries/FlashDisk
 
   pico2:
@@ -25,4 +31,10 @@ profiles:
       - Adafruit TinyUSB Library (3.7.7)
       - MIDI Library (5.0.2)
       - SdFat - Adafruit Fork (2.3.103)
+      - Adafruit MPR121 (1.2.1)
+      - Adafruit NeoPixel (1.15.5)
+      - Adafruit SH110X (2.1.15)
+      - Adafruit GFX Library (1.12.6)
+      - RotaryEncoder (1.6.0)
+      - dependency: Adafruit BusIO (1.17.4)
       - dir: ../libraries/FlashDisk

@@ -5,10 +5,14 @@
 //                 circuitpython/wavesynth. Work in progress: for now a
 //                 mono wavetable synth (TRS + USB MIDI) plus a USB drive
 //                 on CircuitPython's CIRCUITPY partition, holding
-//                 /wavetables and /patches. Program change or serial
-//                 'w'/'W' picks the table, CC1 or serial ','/'.' moves
-//                 through it; serial 'p'/'P' picks a param, '['/']'
-//                 changes it, '?' lists them (until the pots exist).
+//                 /wavetables and /patches.
+//
+// The 8 pots edit the 8 params of the current page, the encoder turns
+// pages (24 params over 3). The 16 step pads play the scale up from the
+// bottom left, up/down change octave. The right slider sets wpos, the
+// left one the filter cutoff. Program change picks the table, CC1 wpos.
+// Serial: 'w'/'W' table, ','/'.' wpos, 'p'/'P' picks a param, '['/']'
+// changes it, '?' lists them.
 //
 // core0: USB (MIDI, MSC), UART MIDI, files. core1: Mozzi audio.
 // Audio drops out while the host writes the drive: every flash write
@@ -22,6 +26,8 @@
 #define MOZZI_AUDIO_MODE MOZZI_OUTPUT_I2S_DAC
 #define MOZZI_AUDIO_CHANNELS MOZZI_STEREO  // mono only drives the left channel
 #define MOZZI_CONTROL_RATE 512  // also how often core1 drains note_queue
+// its ADC setup turns GP26-29 analog, and GP27/28 are the encoder
+#define MOZZI_ANALOG_READ MOZZI_ANALOG_READ_NONE
 
 #include <Mozzi.h>
 
@@ -33,11 +39,23 @@
 #include <MIDI.h>
 #include "wavetable.h"
 #include "synth_engine.h"
+#include "harmony.h"
+#include "hw.h"
+#include "paramset.h"
+#include "ui.h"
 
 #define uart_rx_pin  17
 #define uart_tx_pin  16
 
 #define DISK_LABEL "SYNTHIOTA"
+
+#define SCAN_MS   2   // pads and pots
+#define UI_MS     50  // params, LEDs, screen
+#define VELOCITY  100
+#define KEY_ROOT  48  // scale degree 0 at key C, no octave shift
+const int8_t OCT_STEPS[] = { -24, -12, 0, 12, 24 };
+#define OCT_MID 2
+#define ENC_DIR (-1)  // this encoder counts down going clockwise
 
 // TODO: temp switch while chasing flash corruption; 0 runs Mozzi on core0
 #ifndef AUDIO_ON_CORE1
@@ -45,6 +63,8 @@
 #endif
 
 Params params;  // core0 writes, core1 reads
+float wsel = 0, scale_sel = 0, key = 0;  // params beyond the engine's
+int octave = OCT_MID;
 volatile bool audio_mute = false;
 volatile uint32_t ctl_ticks = 0;  // TODO: temp, core1 heartbeat for 'a'
 // > the 256-sample fade plus Mozzi's 256-sample output buffer (~16ms at
@@ -149,6 +169,7 @@ void wave_rescan() {
   if (wave_sel >= 0) strcpy(cur, wave_files[wave_sel]);
   wave_scan(fatfs);
   Serial.printf("%d wavetables\n", num_wave_files);
+  wsel_param().hi = max(num_wave_files - 1, 0);
   int idx = cur[0] ? wave_find(cur) : -1;
   load_wave(idx < 0 ? 0 : idx);
 }
@@ -160,7 +181,9 @@ void load_wave(int idx) {
   }
   idx = (idx + num_wave_files) % num_wave_files;
   uint32_t t = micros();
-  if (!wave_select(fatfs, idx)) {
+  bool ok = wave_select(fatfs, idx);
+  wsel = max(wave_sel, 0);
+  if (!ok) {
     Serial.printf("load failed: %s%s\n", wave_files[idx],
                   pending_table ? " (core1 hasn't taken the last one)" : "");
     return;
@@ -187,42 +210,75 @@ void nudge_wpos(int dir) {
   Serial.printf("wpos %d / %d\n", w, span);
 }
 
-struct ParamDef {
-  const char *name;
-  float *v;
-  float lo, hi, step;
-};
-// order and ranges from circuitpython/wavesynth's PARAMS; wlfo is 0..1
-// like wpos, not in waves
-const ParamDef param_defs[] = {
-  {"freq", &params.freq, 60, 8000, 100},   {"reso", &params.reso, 0.6, 6, 0.2},
-  {"ftype", &params.ftype, 0, 3, 1},       {"wlfo", &params.wlfo, 0, 1, 0.05},
-  {"wrate", &params.wrate, 0, 5, 0.1},     {"wshp", &params.wshp, 0, 1, 1},
-  {"w1x", &params.w1x, 0, 1, 1},           {"wvel", &params.wvel, 0, 1, 0.1},
-  {"atk", &params.atk, 0, 3, 0.05},        {"rel", &params.rel, 0, 3, 0.1},
-  {"fatk", &params.fatk, 0.01, 3, 0.05},   {"frel", &params.frel, 0.01, 3, 0.1},
-  {"famt", &params.famt, -4000, 6000, 250}, {"lamt", &params.lamt, 0, 4000, 200},
-  {"lrate", &params.lrate, 0, 8, 0.25},    {"vdep", &params.vdep, 0, 0.05, 0.002},
-  {"vrate", &params.vrate, 0.1, 12, 0.5},  {"pamt", &params.pamt, -0.5, 0.5, 0.05},
-  {"ptime", &params.ptime, 0.005, 1, 0.02}, {"vol", &params.vol, 0.1, 1, 0.05},
-};
-const int num_params = sizeof(param_defs) / sizeof(param_defs[0]);
-int param_sel = 0;
-
 const char *const FILTER_NAMES[] = {"LPF", "HPF", "BPF", "NOTCH"};
 
+// the ends, where the DOS-8 names differ: BRAIDS01..04, PLAITS01..03
+const char *wave_label(int i) {
+  static char buf[6];
+  if (i < 0 || i >= num_wave_files) return "-";
+  const char *n = wave_files[i];
+  int len = strlen(n) - 4;  // no ".WAV"
+  if (len <= 5) snprintf(buf, sizeof(buf), "%.*s", len, n);
+  else snprintf(buf, sizeof(buf), "%.2s%.3s", n, n + len - 3);
+  return buf;
+}
+const char *filter_label(int i) { return FILTER_NAMES[constrain(i, 0, 3)]; }
+const char *scale_label(int i) { return SCALES[constrain(i, 0, NUM_SCALES - 1)].label; }
+const char *key_label(int i) { return NOTE_NAMES[constrain(i, 0, 11)]; }
+const char *wshp_label(int i) { return i ? "saw" : "tri"; }
+const char *w1x_label(int i) { return i ? "1x" : "rpt"; }
+
+// circuitpython/wavesynth's PARAMS, in page order; wpos and wlfo are
+// 0..1 across the table, not in waves
+Param param_list[] = {
+  // WAVE
+  {"freq",  &params.freq,  60, 8000, 100,   "%.0f"},
+  {"reso",  &params.reso,  0.6, 6, 0.2,     "%.2f"},
+  {"wpos",  &params.wpos,  0, 1, 0.05,      "%.2f"},
+  {"wsel",  &wsel,         0, 0, 1,         nullptr, wave_label},
+  {"wlfo",  &params.wlfo,  0, 1, 0.05,      "%.2f"},
+  {"wrate", &params.wrate, 0, 5, 0.1,       "%.1f"},
+  {"atk",   &params.atk,   0, 3, 0.05,      "%.2f"},
+  {"rel",   &params.rel,   0, 3, 0.1,       "%.2f"},
+  // ENV/FILT
+  {"fatk",  &params.fatk,  0.01, 3, 0.05,   "%.2f"},
+  {"frel",  &params.frel,  0.01, 3, 0.1,    "%.2f"},
+  {"famt",  &params.famt,  -4000, 6000, 250, "%.0f"},
+  {"ftype", &params.ftype, 0, 3, 1,         nullptr, filter_label},
+  {"lamt",  &params.lamt,  0, 4000, 200,    "%.0f"},
+  {"lrate", &params.lrate, 0, 8, 0.25,      "%.1f"},
+  {"vdep",  &params.vdep,  0, 0.05, 0.002,  "%.3f"},
+  {"vol",   &params.vol,   0.1, 1, 0.05,    "%.2f"},
+  // KEY/MOD
+  {"scale", &scale_sel,    0, NUM_SCALES - 1, 1, nullptr, scale_label},
+  {"key",   &key,          0, 11, 1,        nullptr, key_label},
+  {"wshp",  &params.wshp,  0, 1, 1,         nullptr, wshp_label},
+  {"w1x",   &params.w1x,   0, 1, 1,         nullptr, w1x_label},
+  {"wvel",  &params.wvel,  0, 1, 0.1,       "%.2f"},
+  {"vrate", &params.vrate, 0.1, 12, 0.5,    "%.1f"},
+  {"pamt",  &params.pamt,  -0.5, 0.5, 0.05, "%+.2f"},
+  {"ptime", &params.ptime, 0.005, 1, 0.02,  "%.2f"},
+};
+const int num_params = sizeof(param_list) / sizeof(param_list[0]);
+const char *const PAGE_NAMES[] = { "WAVE", "ENV/FILT", "KEY/MOD" };
+static_assert(sizeof(param_list) / sizeof(Param) == 3 * 8, "3 pages of 8");
+
+// raised well above the ~0.004 rest jitter of a muxed synthiota pot
+ParamSet<8> param_set(param_list, num_params, 0.012);
+PotPageUI ui(param_set, PAGE_NAMES);
+int param_sel = 0;
+
+Param &wsel_param() { return param_list[3]; }
+
 void print_param(int i) {
-  const ParamDef &d = param_defs[i];
-  if (d.v == &params.ftype) {
-    Serial.printf("%-5s %s\n", d.name, FILTER_NAMES[(int)(*d.v + 0.5f)]);
-  } else {
-    Serial.printf("%-5s %.3f\n", d.name, *d.v);
-  }
+  char buf[16];
+  param_text(param_list[i], buf, sizeof(buf));
+  Serial.printf("%-5s %s\n", param_list[i].name, buf);
 }
 
 void nudge_param(int dir) {
-  const ParamDef &d = param_defs[param_sel];
-  *d.v = constrain(*d.v + dir * d.step, d.lo, d.hi);
+  Param &p = param_list[param_sel];
+  *p.v = constrain(*p.v + dir * p.step, p.lo, p.hi);
   print_param(param_sel);
 }
 
@@ -243,8 +299,108 @@ void midiNoteOff(byte channel, byte pitch, byte velocity) {
   Serial.printf("note off %3d\n", pitch);
 }
 
+void note_on(uint8_t n) {
+  note_queue.push(note_event(true, n, VELOCITY));
+  MIDIusb.sendNoteOn(n, VELOCITY, 1);
+  MIDIuart.sendNoteOn(n, VELOCITY, 1);
+}
+void note_off(uint8_t n) {
+  note_queue.push(note_event(false, n, 0));
+  MIDIusb.sendNoteOff(n, 0, 1);
+  MIDIuart.sendNoteOff(n, 0, 1);
+}
+
+// TODO: the top row plays diatonic chords on the last bottom pad, once
+// there's polyphony; until then it carries on up the scale
+int pad_note(int step) {
+  int root = KEY_ROOT + lroundf(key) + OCT_STEPS[octave];
+  return scale_degree(SCALES[lroundf(scale_sel)], root, step);
+}
+
+int16_t held[NUM_STEPS];  // the note each step pad started, -1 if none
+int pair = 0;  // which pot pair the screen shows; the last pot turned wins
+
+// true if a step pad changed
+bool scan_controls() {
+  static uint32_t last = 0;
+  pots.update();
+  touch.update();
+  uint32_t t = touch.touched, down = t & ~last;
+  bool changed = false;
+  for (int i = 0; i < NUM_STEPS; i++) {
+    uint32_t bit = 1UL << STEP_PADS[i];
+    if (!((t ^ last) & bit)) continue;
+    changed = true;
+    if (t & bit) {
+      int n = pad_note(i);
+      if (n < 0 || n > 127) continue;
+      held[i] = n;
+      note_on(n);
+    } else if (held[i] >= 0) {
+      note_off(held[i]);
+      held[i] = -1;
+    }
+  }
+  if (down & (1UL << PAD_UP)) octave = min(octave + 1, (int)sizeof(OCT_STEPS) - 1);
+  if (down & (1UL << PAD_DOWN)) octave = max(octave - 1, 0);
+  // relic's slider position can drift off its baseline, so only while touched
+  if (touch.rslider.touched(t)) {
+    float r = touch.rslider.value();
+    if (r >= 0) params.wpos = r;
+  }
+  if (touch.lslider.touched(t)) {
+    float l = touch.lslider.value();
+    if (l >= 0) params.freq = 200 + l * 7000;
+  }
+  last = t;
+
+  static long enc_last = 0;
+  long pos = encoder.getPosition();
+  if (pos != enc_last) {
+    int n = param_set.pages();
+    param_set.setPage(((param_set.page() + ENC_DIR * (pos - enc_last)) % n + n) % n);
+    pair = 0;
+    enc_last = pos;
+  }
+  return changed;
+}
+
+void update_ui(bool pads_changed) {
+  static bool refresh = false;
+  uint32_t turned = param_set.update(pots.val);
+  for (int k = 0; k < 8; k++) {
+    if (turned & (1UL << k)) pair = k / 2;
+  }
+  if (wave_sel >= 0 && lroundf(wsel) != wave_sel) load_wave(lroundf(wsel));
+
+  char hdr[8];
+  int o = octave - OCT_MID;
+  snprintf(hdr, sizeof(hdr), o ? "%s%+d" : "%s", NOTE_NAMES[lroundf(key)], o);
+  ui.showPair(pair);
+  refresh |= ui.update(hdr);
+  if (refresh && !pads_changed) {  // a push takes ms; not when a note starts
+    disp.display();
+    refresh = false;
+  }
+
+  static uint32_t shown[NUM_LEDS];
+  uint32_t c[NUM_LEDS] = {};
+  for (int i = 0; i < NUM_STEPS; i++) c[i] = held[i] >= 0 ? 0x00AAFF : 0;
+  // the param, not the pot, so it means something after a page turn
+  for (int k = 0; k < 8; k++) {
+    uint8_t lvl = 6 + 249 * param_set.knob(k).norm();
+    c[LED_POTS + k] = leds.Color(0, lvl, lvl);
+  }
+  if (memcmp(c, shown, sizeof(c))) {
+    memcpy(shown, c, sizeof(c));
+    for (int i = 0; i < NUM_LEDS; i++) leds.setPixelColor(i, c[i]);
+    leds.show();
+  }
+}
+
 void setup() {
   Serial.begin(115200);
+  for (int i = 0; i < NUM_STEPS; i++) held[i] = -1;
 
   // before MSC is up, so the host never sees a half-made volume
   bool fits = flash_backend.sketchFits();
@@ -276,9 +432,10 @@ void setup() {
   MIDIuart.setHandleProgramChange(midiProgramChange);
   MIDIuart.setHandleControlChange(midiControlChange);
 
+  hw_setup();
+
   if (fits) {
-    wave_scan(fatfs);
-    load_wave(0);
+    wave_rescan();
   } else {
     Serial.println("sketch overlaps CIRCUITPY, drive disabled");
   }
@@ -348,6 +505,19 @@ void loop() {
   MIDIusb.read();
 
   if (drive.changed()) wave_rescan();
+
+  static uint32_t last_scan = 0, last_ui = 0;
+  static bool pads_changed = false;
+  uint32_t now = millis();
+  if (now - last_scan >= SCAN_MS) {
+    last_scan = now;
+    pads_changed |= scan_controls();
+  }
+  if (now - last_ui >= UI_MS) {
+    last_ui = now;
+    update_ui(pads_changed);
+    pads_changed = false;
+  }
   if (audio_mute && !drive.hostActive()) audio_mute = false;
   if (wave_swaps != last_swaps) {
     last_swaps = wave_swaps;
