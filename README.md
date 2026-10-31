@@ -26,23 +26,42 @@ The PCBAs come with all SMD parts assembled. The components you will need to sup
 - 2 x [PJ320A 3.5mm stereo jack](https://amzn.to/4i5F33d)
 - 8 x [RK09K 10k vertical potentiometer](https://amzn.to/47XbwEk) (or similar)
 - 1 x [EC11 rotary encoder](https://amzn.to/4o1vSSW)
+- 8 x knobs for pots
+- 1 x knob for encoder
+
+For the knobs, you can buy knobs off Amazon or you can 3d print them.
+Some 3D printable knobs I like are [these 6mm Vintage Synth Knob](https://makerworld.com/en/models/2665733-6mm-vintage-synth-knob-80s-boss-style#profileId-2949654).
 
 You will also need some headers and header sockets to attach the modules to the PCB.
 If using the [enclosure](./enclosure), the top part expects the header arrangement to be:
 
+### PCM5102 jumpers
+
+Before soldering down the PCM5102 DAC, solder bridge the jumpers 
+to be 1L/2L/3H/4L, as in this picture:
+
+<img src="./docs/pcm5102_jumpers.png" width=300>
+
+### Sockets and header pins
+
 - Pico: 
-  - Standard header pins on Pico  (Pico H sold w/ these pins soldered)
   - [Short socket headers](https://www.adafruit.com/product/5585) for Pico on synthiota board
+  - Standard header pins on Pico  (Pico H sold w/ these pins soldered)
 - OLED display:
-  - Standard header pins on OLED display  (usually sold w/ these pins soldered)
-  - [Short socket headers](https://www.adafruit.com/product/5585) for OLED display on synthiota board
+  - [Short socket headers](https://www.adafruit.com/product/5585) for OLED display on synthio  - Standard header pins on OLED display  (usually sold w/ these pins soldered)
+ta board
 - PCM5102 I2S DAC
   - Standard header pins on PCM5102 I2S DAC board (usually sold w/ these pins soldered)
   - I2S DAC w/ header pins is soldered directly to the synthiota board, no socket
 
+When soldering down the jacks and sockets, holding them in place with masking tape
+or blutack makes things easier. For the Pico header sockets, sticking them into 
+a Pico and hold the Pico onto the board with masking tape or blutack can be helpful.
+
+After soldering everything, the result will look like:
+
 <img src="./docs/synthiota1_pcb_headers.jpg" width=500>
 
-(most links are Amazon affiliate links)
 
 
 # Pico pins used
@@ -104,4 +123,6 @@ Free pins: GP0,GP1, GP4,GP5,GP6, GP14,GP15. Feel free to use for other purposes.
 
 [<img src="./docs/synthiota1-sch.png" width=700>](./schematics/synthiota1/synthiota1-sch.pdf)
 
+
+(note most product links are Amazon affiliate links)
 
