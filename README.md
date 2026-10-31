@@ -16,6 +16,40 @@ https://github.com/user-attachments/assets/1fe45b23-2a2a-41f4-9afe-203840c703e8
 - "tbish" TB-303 like synth, demo1: https://youtu.be/O4a5pk78DVM
 
 
+# Apps
+
+Each app's folder has a README with its controls and how to install it.
+
+CircuitPython, in [`circuitpython/`](./circuitpython):
+
+- [`polysynth`](./circuitpython/polysynth) -- two-oscillator
+  subtractive polysynth. The pads are a chromatic keyboard and the pots
+  edit 16 params over 2 pages.
+- [`wavesynth`](./circuitpython/wavesynth) -- wavetable polysynth. The
+  pads are a scale keyboard, with chords on the top row, and the pots
+  edit 24 params over 3 pages.
+- [`swarmsynth`](./circuitpython/swarmsynth) -- Swarmatron-style drone:
+  eight oscillators on one pitch, fanned apart by the right slider.
+- [`dronesynth`](./circuitpython/dronesynth) -- eight drone oscillators,
+  each tuned by its own knob, each with its own LFO.
+- [`dronesynth_wt`](./circuitpython/dronesynth_wt) -- dronesynth with
+  each oscillator at its own place in a shared wavetable.
+- [`tbish2`](./circuitpython/tbish2) -- TB-303-style acid bassline with
+  a 16-step sequencer you can edit on the board.
+- [`tbish`](./circuitpython/tbish) -- the original TB-303-style synth,
+  a technology demo with no pattern editing or MIDI in.
+- [`hwtest`](./circuitpython/hwtest) -- hardware bring-up tests and the
+  reference pin setup.
+
+Arduino, in [`arduino/`](./arduino):
+
+- [`wavesynth`](./arduino/wavesynth) -- a Mozzi port of the
+  CircuitPython wavesynth, in progress. It serves the CIRCUITPY drive
+  over USB for wavetables and patches.
+- [`hwtest`](./arduino/hwtest) -- a board test, plus simple mono MIDI
+  synths using M16 and Mozzi.
+
+
 # Assembling
 
 The PCBAs come with all SMD parts assembled. The components you will need to supply:
