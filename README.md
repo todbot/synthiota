@@ -26,23 +26,31 @@ The PCBAs come with all SMD parts assembled. The components you will need to sup
 - 2 x [PJ320A 3.5mm stereo jack](https://amzn.to/4i5F33d)
 - 8 x [RK09K 10k vertical potentiometer](https://amzn.to/47XbwEk) (or similar)
 - 1 x [EC11 rotary encoder](https://amzn.to/4o1vSSW)
+- 2 x 20-pin 5 mm "short" header socket for Pico (see below)
+- 1 x 7-pin 5mm "short" header socket for display (see below)
 - 8 x knobs for pots
 - 1 x knob for encoder
 
 For the knobs, you can buy knobs off Amazon or you can 3d print them.
 Some 3D printable knobs I like are [these 6mm Vintage Synth Knob](https://makerworld.com/en/models/2665733-6mm-vintage-synth-knob-80s-boss-style#profileId-2949654).
 
-You will also need some headers and header sockets to attach the modules to the PCB.
-If using the [enclosure](./enclosure), the top part expects the header arrangement to be:
-
-### PCM5102 jumpers
+### PCM5102 DAC setup
 
 Before soldering down the PCM5102 DAC, solder bridge the jumpers 
 to be 1L/2L/3H/4L, as in this picture:
 
 <img src="./docs/pcm5102_jumpers.png" width=300>
 
-### Sockets and header pins
+The PCM5102 DAC should have standard header pins soldered to it, on the 6-pin 
+header row. For extra stability, you can also solder one of the G pins behind
+the audio jack.
+
+More inforomation about the PCM5102 can be found [in this blog post](https://todbot.com/blog/2023/05/16/cheap-stereo-line-out-i2s-dac-for-circuitpython-arduino-synths/).
+
+### Hader sockets and header pins
+
+You will also need some headers and header sockets to attach the modules to the PCB.
+If using the [enclosure](./enclosure), the top part expects the header arrangement to be:
 
 - Pico: 
   - [Short socket headers](https://www.adafruit.com/product/5585) for Pico on synthiota board
