@@ -50,7 +50,7 @@ from dronesynth_wt_ui import DroneUI
 from synthtools.blocks import scalar_block
 from wave_bank import WaveBank
 
-SAMPLE_RATE = 44100  # set to 22050 here if audio glitches
+SAMPLE_RATE = 32000  # set to 22050 here if audio glitches
 
 NUM_OSC = 8
 UI_INTERVAL = 0.05  # seconds between UI passes (20 Hz)
