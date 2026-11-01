@@ -37,10 +37,13 @@ It takes a CircuitPython firmware UF2 and an app folder, then:
   to the drive root, unless the app has its own copy
 - installs the rest of `requirements.txt` into `/lib` with `circup`,
   matched to that board and CircuitPython version
-- builds a FAT image of the drive and joins it to the firmware
+- builds the drive and joins it to the firmware with `folder2uf2`,
+  using the drive address and size from the firmware
 
-The output is `<app>-<board>.uf2` unless `-o` names it. It covers the
-whole flash, so flashing it replaces anything already on the drive.
+The output is `<app>-<board>.uf2` unless `-o` names it. It writes the
+firmware and only the used part of the drive, so it stays small; the
+new drive replaces whatever was there. `--full` writes the whole drive
+instead, wiping any leftover data.
 
 Options:
 
@@ -49,11 +52,12 @@ Options:
 - `-r FILE` -- a different requirements file
 - `--flash-size N` -- flash size in bytes, if not 2MB (RP2040) or 4MB
   (RP2350)
+- `--full` -- write the whole drive, not just its used part
 - `--keep` -- keep the staged drive folder, to see what went in
 
-Needs `picotool`, `mtools` and `circup`. With Homebrew:
+Needs `picotool`, `circup` and `folder2uf2`. With Homebrew:
 
-    brew install picotool mtools && pip3 install circup
+    brew install picotool && pip3 install circup folder2uf2
 
 The GitHub Action in `.github/workflows/build-uf2.yml` runs this for
 every app against the latest CircuitPython 11.x when a release is

@@ -34,8 +34,8 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y mtools libusb-1.0-0
-          pip install circup
+          sudo apt-get install -y libusb-1.0-0
+          pip install circup folder2uf2==0.1.2
           gh release download "$PICOTOOL_TAG" -R raspberrypi/pico-sdk-tools \
             -p "$PICOTOOL_TGZ" -D /tmp
           tar xzf "/tmp/$PICOTOOL_TGZ" -C /tmp
