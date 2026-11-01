@@ -50,6 +50,24 @@ Arduino, in [`arduino/`](./arduino):
   synths using M16 and Mozzi.
 
 
+### Getting to BOOT mode via commandline
+
+If you don't want to hold the BOOT button down while powering on, 
+you can usually get the synthiota board into BOOT mode via the commandline with:
+
+```sh
+PORT=/dev/cu.usbmodem21301   # the COM port of the Pico
+python3 -c "import serial;serial.Serial('$PORT',1200).close()"
+```
+
+To install a UF2 once in BOOT mode, you can do (this flashes and starts the program):
+
+```sh
+picotool load -x file.uf2
+```
+
+(if you need, `pip3 install pyserial` and `brew install picotool`)
+
 # Assembling
 
 The PCBAs come with all SMD parts assembled. The components you will need to supply:
@@ -81,7 +99,7 @@ the audio jack.
 
 More inforomation about the PCM5102 can be found [in this blog post](https://todbot.com/blog/2023/05/16/cheap-stereo-line-out-i2s-dac-for-circuitpython-arduino-synths/).
 
-### Hader sockets and header pins
+### Header sockets and header pins
 
 You will also need some headers and header sockets to attach the modules to the PCB.
 If using the [enclosure](./enclosure), the top part expects the header arrangement to be:
@@ -103,7 +121,6 @@ a Pico and hold the Pico onto the board with masking tape or blutack can be help
 After soldering everything, the result will look like:
 
 <img src="./docs/synthiota1_pcb_headers.jpg" width=500>
-
 
 
 # Pico pins used
