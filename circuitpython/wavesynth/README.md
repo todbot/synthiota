@@ -5,8 +5,9 @@ Ported from pico_test_synth's `wavesynth`.
 
 `wpos` moves within the loaded wavetable and morphs sounding notes
 live; `wsel` picks which `.WAV` in `wavetables/`. Two LFOs: `lamt` /
-`lrate` over the filter cutoff, and `wlfo` / `wrate` sweeping `wpos` up
-toward `wlfo` (a ceiling at or below `wpos` means no sweep).
+`lrate` over the filter cutoff, and `wlfo` / `wrate` sweeping from
+`wpos` up `wlfo` waves (0 means no sweep). Moving `wpos` moves the
+sweep with it.
 
 The 16 step pads are an 8x2 **scale keyboard** (`lib/harmony.py`): the
 bottom row is the 8 scale degrees, one note each; the top row plays a
@@ -42,8 +43,8 @@ disk save.
 
 Page WAVE:    freq reso wpos wsel wlfo wrate atk rel
 Page ENV/FILT: fatk frel famt ftype lamt lrate vdep vol
-Page KEY/MOD: scale key wshp w1x wvel vrate pamt ptime
-  (wshp/w1x/wvel = wave-LFO shape / one-shot / velocity depth)
+Page KEY/MOD: scale key dec sus vdly vrate pamt ptime
+  (dec/sus = amp decay / sustain, vdly = vibrato fade-in)
 
 ## MIDI
 
@@ -77,8 +78,10 @@ Then run `dot_clean -m /Volumes/CIRCUITPY`.
 - `wpos` and `wlfo` are re-ranged whenever `wsel` loads a different
   file: the wavetables here hold 64 waves each and a fixed ceiling would
   hide most of every table.
-- The wave LFO only advances when `synth.update()` runs; the main loop
-  calls it every pass, a cheap no-op while `wlfo <= wpos`.
+- The wave LFO only reaches the sound when `synth.update()` runs; the
+  main loop calls it every pass.
+- Needs `synthtools` 0.8.0 or newer, which replaced the wave LFO's
+  ceiling, shape, one-shot and velocity depth with `wave_lfo_range`.
 - macOS drops `._`-prefixed AppleDouble files into `wavetables/` on a
   FAT drive; `wave_files()` skips them, but `dot_clean -m /Volumes/CIRCUITPY`
   after copying is still worth it.

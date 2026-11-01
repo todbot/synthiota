@@ -6,9 +6,9 @@
 # Ported from pico_test_synth's wavesynth. A WavetableSynth: "wpos" moves
 # within the loaded wavetable and morphs sounding notes live, "wsel" picks
 # which .WAV in wavetables/. Two LFOs: one over the filter cutoff (lamt /
-# lrate), one sweeping "wpos" up toward "wlfo" at "wrate". The wave LFO
-# only advances when synth.update() is called, which the main loop does
-# every pass; it is a cheap no-op while wlfo <= wpos.
+# lrate), one sweeping from "wpos" up "wlfo" waves at "wrate". The wave
+# LFO only reaches the sound when synth.update() is called, which the main
+# loop does every pass.
 #
 # The 16 step pads are an 8x2 scale keyboard (see lib/harmony.py): the
 # BOTTOM row is the 8 scale degrees, one note each; the TOP row plays a
@@ -22,8 +22,7 @@
 #
 # Patches live in code only (default_patches()); there is no disk save.
 #
-# Needs a synthtools newer than bundle 0.5.1 (for the wave LFO and
-# synth.update()); the repo installs it from lib/synthtools/*.mpy.
+# Needs synthtools 0.8.0 or newer (wave_lfo_range).
 
 import microcontroller
 microcontroller.cpu.frequency = 200_000_000
@@ -152,9 +151,9 @@ def wave_top():
 
 
 def sync_wave_ranges():
-    """Re-range the two params that index into the wavetable (wpos and the
-    wave-LFO ceiling wlfo), called when wsel loads a different file: their
-    old maximum may now be off the end of it."""
+    """Re-range the two params measured in waves (wpos and the wave-LFO
+    range wlfo), called when wsel loads a different file: their old
+    maximum may now be off the end of it."""
     top = wave_top()
     for name in ("wpos", "wlfo"):
         q = param_set.param_for_name(name)
@@ -169,7 +168,7 @@ def sync_wave_ranges():
 # Seeded from, and written back to, the SYNTH, not the patch (synthtools
 # keeps a Patch inert), except scale/key which are app state.
 # Names are <= 5 chars, which is what a screen cell holds. The params
-# with no objattr (wsel, ftype, vol, scale, key, wshp, w1x) are
+# with no objattr (wsel, ftype, vol, scale, key) are
 # special-cased in apply_param() / read_param() / param_text().
 # fmt: off
 PARAMS = [
@@ -178,8 +177,8 @@ PARAMS = [
     Param("reso",  synth.filt_q,         0.6, 6.0,   "%1.2f", "filt_q"),
     Param("wpos",  synth.wave_pos,       0,   wave_top(), "%1.2f", "wave_pos"),
     Param("wsel",  wave_idx(),           0,   len(WAVES) - 1, "%.0f", None),
-    # wlfo is the ceiling wpos sweeps up to; <= wpos means no sweep (0 = off)
-    Param("wlfo",  synth.wave_pos_max,   0,   wave_top(), "%1.2f", "wave_pos_max"),
+    # wlfo is how many waves above wpos the sweep reaches (0 = off)
+    Param("wlfo",  synth.wave_lfo_range, 0,   wave_top(), "%1.2f", "wave_lfo_range"),
     Param("wrate", synth.wave_lfo_rate,  0.0, 5.0,   "%2.1f", "wave_lfo_rate"),
     Param("atk",   synth.attack_time,    0.0, 3.0,   "%1.2f", "attack_time"),
     Param("rel",   synth.release_time,   0.0, 3.0,   "%1.2f", "release_time"),
@@ -198,9 +197,9 @@ PARAMS = [
     # KEY/MOD
     Param("scale", 0, 0, len(SCALES_USED) - 1, "%.0f", None),
     Param("key",   0, 0, 11,                   "%.0f", None),
-    Param("wshp",  0, 0, 1,                     "%.0f", None),  # wave_lfo_shape
-    Param("w1x",   0, 0, 1,                     "%.0f", None),  # wave_lfo_once
-    Param("wvel",  synth.wave_lfo_vel,  0.0, 1.0,   "%1.2f", "wave_lfo_vel"),
+    Param("dec",   synth.decay_time,    0.01,3.0,   "%1.2f", "decay_time"),
+    Param("sus",   synth.sustain_level, 0.0, 1.0,   "%1.2f", "sustain_level"),
+    Param("vdly",  synth.vib_delay,     0.0, 3.0,   "%1.2f", "vib_delay"),
     Param("vrate", synth.vib_rate,      0.1, 12.0,  "%2.1f", "vib_rate"),
     Param("pamt",  synth.penv_amount,  -0.5, 0.5,   "%+1.2f","penv_amount"),
     Param("ptime", synth.penv_time,     0.005, 1.0, "%1.2f", "penv_time"),
@@ -238,10 +237,6 @@ def apply_param(p):
     elif p.name == "key":
         key[0] = round(p.val)
         resync_root()
-    elif p.name == "wshp":
-        synth.wave_lfo_shape = ("triangle", "saw")[round(p.val)]
-    elif p.name == "w1x":
-        synth.wave_lfo_once = bool(round(p.val))
     else:
         p.apply_to_obj(synth)
 
@@ -260,10 +255,6 @@ def read_param(p):
         p.val = SCALES_USED.index(scale.name) if scale.name in SCALES_USED else 0
     elif p.name == "key":
         p.val = key[0]
-    elif p.name == "wshp":
-        p.val = 0 if synth.wave_lfo_shape == "triangle" else 1
-    elif p.name == "w1x":
-        p.val = 1 if synth.wave_lfo_once else 0
     elif p.objattr:
         p.val = getattr(synth, p.objattr)
 
@@ -277,10 +268,6 @@ def param_text(p):
         return SCALE_LABELS[round(p.val)]
     if p.name == "key":
         return NOTE_NAMES[round(p.val)]
-    if p.name == "wshp":
-        return ("tri", "saw")[round(p.val)]
-    if p.name == "w1x":
-        return ("rpt", "1x")[round(p.val)]
     return p.fmt % p.val
 
 
@@ -446,7 +433,7 @@ def update_ui():
 
 while True:
     s.update()
-    synth.update()  # advances the wave LFO; cheap no-op while wlfo <= wpos
+    synth.update()  # pushes the wave LFO into the shared wave buffer
     touched = play_pads()
     check_octave()
     check_encoder()
