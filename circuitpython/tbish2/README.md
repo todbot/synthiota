@@ -5,6 +5,8 @@ A TB-303 inspired monophonic bass synth for Synthiota, on `synthtools`'
 [pico_test_synth](https://github.com/todbot/pico_test_synth)'s `tbish2`;
 the controls are this repo's [`tbish/`](../tbish/), which is left as is.
 
+![tbish2 controls](../../docs/controls/tbish2.png)
+
 Compared to `tbish/`, the library synth adds:
 
 - accent raises resonance (`accent_q`) and cutoff (`accent_cutoff`),

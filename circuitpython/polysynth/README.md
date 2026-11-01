@@ -5,6 +5,8 @@ A playable two-oscillator subtractive polysynth for Synthiota, on
 [pico_test_synth](https://github.com/todbot/pico_test_synth)'s 
 `synthtools_polysynth`.
 
+![polysynth controls](../../docs/controls/polysynth.png)
+
 The 16 step pads are a chromatic keyboard. The 8 pots edit 8 parameters
 at once; the encoder turns pages (16 parameters over 2 pages, OSC/AMP
 and FILT/MOD). All 8 pots on a page are live, but the screen shows one

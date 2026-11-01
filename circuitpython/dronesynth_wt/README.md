@@ -6,6 +6,8 @@ position in one shared wavetable. What an oscillator's wave LFO sweeps
 is that position, not its pitch: a drone that moves in timbre while it
 stays in tune.
 
+![dronesynth_wt controls](../../docs/controls/dronesynth_wt.png)
+
 Everything else is dronesynth. There is no scale, no sequencer and
 nothing to play. You tune the eight oscillators against each other,
 move each one to a different place in the table, switch them in and out,

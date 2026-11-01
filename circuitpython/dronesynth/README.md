@@ -5,6 +5,8 @@ instrument and not a swarm: there is no scale, no sequencer and nothing
 to play. You tune the eight oscillators against each other, switch them
 in and out, and set each one wobbling at its own speed.
 
+![dronesynth controls](../../docs/controls/dronesynth.png)
+
 The eight start an octave apart in pairs, so the knobs cover five
 octaves between them rather than all landing in the same two.
 

@@ -4,6 +4,8 @@ A Dewanatron Swarmatron-style drone machine for Synthiota, on
 `synthtools`' `SwarmSynth`: eight oscillators on one pitch, fanned apart
 by a single "swarm" control and each drifting independently.
 
+![swarmsynth controls](../../docs/controls/swarmsynth.png)
+
 The real instrument is monophonic, played from a pitch ribbon, with a
 second ribbon and a knob pulling the oscillators from a few cents apart
 out to a wide chord of equidistant pitches. This is that, on the pads:

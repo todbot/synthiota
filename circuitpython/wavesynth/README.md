@@ -3,6 +3,8 @@
 A wavetable polysynth for Synthiota, on `synthtools`' `WavetableSynth`.
 Ported from pico_test_synth's `wavesynth`.
 
+![wavesynth controls](../../docs/controls/wavesynth.png)
+
 `wpos` moves within the loaded wavetable and morphs sounding notes
 live; `wsel` picks which `.WAV` in `wavetables/`. Two LFOs: `lamt` /
 `lrate` over the filter cutoff, and `wlfo` / `wrate` sweeping from
