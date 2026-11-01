@@ -3,6 +3,7 @@
 prebuilt CIRCUITPY drive holding an app and its libraries.
 
   python3 make_uf2.py adafruit-circuitpython-...uf2 polysynth
+  python3 make_uf2.py ...uf2 dronesynth_wt -a wavesynth/wavetables
 
 Needs picotool, circup, and mtools
 If using homebrew:  brew install picotool mtools && pip3 install circup
@@ -35,7 +36,8 @@ def fw_info(uf2_path):
             sys.exit(f"couldn't find {pat!r} in 'picotool info' output")
         return m.group(1)
     return {
-        "family": find(r"family ID '([\w-]+)'"),
+        # picotool wraps long lines, so "family ID" can split
+        "family": find(r"family\s+ID\s+'([\w-]+)'"),
         "board": find(r"BOARD=(\S+)"),
         "version": find(r"^\s*version:\s+(\S+)"),
         # only the start is trustworthy: the size CP reports is a fixed
@@ -61,12 +63,17 @@ def read_uf2(uf2_path):
     return lo, buf
 
 
-def stage_app(app_dir, req_path, stage, info):
+def stage_app(app_dir, req_path, stage, info, extras=()):
     """Lay out the CIRCUITPY contents in stage/."""
-    shutil.copytree(app_dir, stage, dirs_exist_ok=True,
-                    ignore=lambda d, names: [n for n in names
-                                             if n.startswith(".")
-                                             or n in SKIP_NAMES])
+    ignore = lambda d, names: [n for n in names
+                               if n.startswith(".") or n in SKIP_NAMES]
+    shutil.copytree(app_dir, stage, dirs_exist_ok=True, ignore=ignore)
+    for extra in extras:
+        if extra.is_dir():
+            shutil.copytree(extra, stage / extra.name, dirs_exist_ok=True,
+                            ignore=ignore)
+        else:
+            shutil.copy2(extra, stage / extra.name)
     (stage / "lib").mkdir(exist_ok=True)
     packages = []
     for line in req_path.read_text().splitlines():
@@ -110,6 +117,9 @@ def main():
                     help="output .uf2 (default: <app>-<board>.uf2)")
     ap.add_argument("-r", "--requirements", type=Path,
                     default=HERE / "requirements.txt")
+    ap.add_argument("-a", "--add", type=Path, action="append", default=[],
+                    help="file or dir to also put in /, e.g. "
+                         "wavesynth/wavetables (repeatable)")
     ap.add_argument("--flash-size", type=lambda s: int(s, 0),
                     help="flash bytes (default: 2MB rp2040, 4MB rp2350)")
     ap.add_argument("--keep", action="store_true",
@@ -132,7 +142,7 @@ def main():
     tmp = Path(tempfile.mkdtemp(prefix="make_uf2_"))
     try:
         stage = tmp / "CIRCUITPY"
-        stage_app(args.app, args.requirements, stage, info)
+        stage_app(args.app, args.requirements, stage, info, args.add)
         fat = make_fat(tmp / "fs.img", fs_size, stage)
 
         flash = bytearray(b"\xff" * flash_size)
