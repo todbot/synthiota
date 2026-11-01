@@ -18,7 +18,9 @@ https://github.com/user-attachments/assets/1fe45b23-2a2a-41f4-9afe-203840c703e8
 
 # Apps
 
-Each app's folder has a README with its controls and how to install it.
+Each app's folder has a README with its controls. To install, 
+find the corresponding UF2 in the [Releases](https://github.com/todbot/synthiota/releases) 
+section or its directory for how to install it.
 
 CircuitPython, in [`circuitpython/`](./circuitpython):
 
