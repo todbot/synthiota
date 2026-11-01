@@ -49,24 +49,8 @@ Arduino, in [`arduino/`](./arduino):
 - [`hwtest`](./arduino/hwtest) -- a board test, plus simple mono MIDI
   synths using M16 and Mozzi.
 
-
-### Getting to BOOT mode via commandline
-
-If you don't want to hold the BOOT button down while powering on, 
-you can usually get the synthiota board into BOOT mode via the commandline with:
-
-```sh
-PORT=/dev/cu.usbmodem21301   # the COM port of the Pico
-python3 -c "import serial;serial.Serial('$PORT',1200).close()"
-```
-
-To install a UF2 once in BOOT mode, you can do (this flashes and starts the program):
-
-```sh
-picotool load -x file.uf2
-```
-
-(if you need, `pip3 install pyserial` and `brew install picotool`)
+See [Getting to BOOT mode via commandline](#getting-to-boot-mode-via-commandline)
+for one way to install these.
 
 # Assembling
 
@@ -181,6 +165,35 @@ Free pins: GP0,GP1, GP4,GP5,GP6, GP14,GP15. Feel free to use for other purposes.
 # Schematics
 
 [<img src="./docs/synthiota1-sch.png" width=700>](./schematics/synthiota1/synthiota1-sch.pdf)
+
+
+
+## Getting to BOOT mode via commandline
+
+If you don't want to hold the BOOT button down while powering on, 
+you can usually get the synthiota board into BOOT mode via the commandline with:
+
+```sh
+PORT=/dev/cu.usbmodem21301   # the COM port of the Pico
+python3 -c "import serial;serial.Serial('$PORT',1200).close()"
+```
+
+If you don't want to use Python, one of these should work:
+
+```
+stty -f $PORT 1200  # MacOS 
+stty -F $PORT 1200  # Linux
+```
+
+To install a UF2 once in BOOT mode, you can do (this flashes and starts the program):
+
+```sh
+picotool load -x file.uf2
+```
+
+Or `picotool reboot` to reset board.  
+
+(if you need, `pip3 install pyserial` and `brew install picotool`)
 
 
 (note most product links are Amazon affiliate links)
