@@ -516,7 +516,8 @@ def draw_app(name, app):
                 y += line_h
 
     out = HERE / (name + ".png")
-    img.save(out, optimize=True)
+    # a 128-colour palette is a third the size and looks the same
+    img.quantize(128, method=Image.Quantize.MEDIANCUT).save(out, optimize=True)
     print(out, img.size)
 
 
