@@ -71,14 +71,12 @@ From `circuitpython/`:
 
     circup install -r requirements.txt
 
-That installs `synthtools` and the other third-party libraries, plus
-the local `lib/` modules (`relic_synthiota.py`, `synthiota_potpage_ui.py`).
+That installs `synthtools`, `relic_synthiota` and the other
+third-party libraries. The local `lib/` module,
+`synthiota_potpage_ui.py`, is copied by hand.
 
 Copy to the CIRCUITPY root: the contents of this folder, plus
 `lib/synthtools/` and the `lib/*.py` modules.
-
-`relic_synthiota.py` originates at
-github.com/relic-se/CircuitPython_Synthiota
 
 ## Notes
 

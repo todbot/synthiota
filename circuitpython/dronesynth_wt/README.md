@@ -134,14 +134,11 @@ From `circuitpython/`:
     circup install -r requirements.txt
 
 Copy to the CIRCUITPY root: the contents of this folder, plus
-`lib/synthtools/` and `lib/relic_synthiota.py`.
+`lib/synthtools/` and `lib/relic_synthiota.mpy`.
 
 **Then copy `wavesynth/wavetables/` to the CIRCUITPY root as
 `/wavetables/`.** The tables are not duplicated in this folder, and
 without them the program raises at boot instead of starting.
-
-`relic_synthiota.py` originates at
-github.com/relic-se/CircuitPython_Synthiota
 
 ## Notes
 

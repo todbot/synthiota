@@ -100,10 +100,7 @@ From `circuitpython/`:
     circup install -r requirements.txt
 
 Copy to the CIRCUITPY root: the contents of this folder, plus
-`lib/synthtools/` and `lib/relic_synthiota.py`.
-
-`relic_synthiota.py` originates at
-github.com/relic-se/CircuitPython_Synthiota
+`lib/synthtools/` and `lib/relic_synthiota.mpy`.
 
 ## Notes
 

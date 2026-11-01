@@ -6,16 +6,17 @@ adafruit_mpr121
 neopixel
 tmidi
 
-# pulled in by lib/relic_synthiota.py for its buttons
+# github.com/relic-se/CircuitPython_Synthiota -- the board's hardware.
+relic_synthiota
+
+# pulled in by relic_synthiota for its buttons
 adafruit_debouncer
 
 # github.com/todbot/CircuitPython_SynthTools -- the synth engine.
 synthtools
 
 # lib/ modules copied to the device (not circup packages):
-#   relic_synthiota.py      -- github.com/relic-se/CircuitPython_Synthiota
 #   synthiota_potpage_ui.py -- the 8-pot two-up param screen
 #   harmony.py              -- scales + chords; headed for synthtools.harmony
 lib/synthiota_potpage_ui.py
-lib/relic_synthiota.py
 lib/harmony.py

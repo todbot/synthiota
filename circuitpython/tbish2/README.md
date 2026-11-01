@@ -79,7 +79,7 @@ From `circuitpython/`:
     circup install -r requirements.txt
 
 Copy to the CIRCUITPY root: `code.py`, `tbish2_ui.py` and `boot.py` from
-this folder, plus `lib/relic_synthiota.py`.
+this folder, plus `lib/relic_synthiota.mpy`.
 
 `boot.py` makes the filesystem writable from the board's side, so pause
 can save the knobs, bpm and patterns. Without it saving fails with a

@@ -58,9 +58,9 @@ From `circuitpython/`:
 
     circup install -r requirements.txt
 
-That installs `synthtools` and the other third-party libraries, plus
-the local `lib/` modules (`relic_synthiota.py`, `synthiota_potpage_ui.py`,
-`harmony.py`).
+That installs `synthtools`, `relic_synthiota` and the other
+third-party libraries. The local `lib/` modules,
+`synthiota_potpage_ui.py` and `harmony.py`, are copied by hand.
 
 Copy to the CIRCUITPY root: the contents of this folder including
 `wavetables/`, plus `lib/synthtools/` and the `lib/*.py` modules.
@@ -68,9 +68,6 @@ Then run `dot_clean -m /Volumes/CIRCUITPY`.
 
 `harmony.py` (scales + chords) is standalone for now, headed for
 `synthtools.harmony`.
-
-`relic_synthiota.py` originates at
-github.com/relic-se/CircuitPython_Synthiota.
 
 ## Notes
 

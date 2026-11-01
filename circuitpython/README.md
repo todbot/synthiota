@@ -16,6 +16,6 @@ For actual applications, see the directories.
 
 `polysynth/` and `wavesynth/` are ported from the pico_test_synth repo.
 All but `tbish/` and `synthtest/` run on the `relic_synthiota` hardware
-library (vendored in `lib/`, from
+library (circup's `relic_synthiota`, from
 github.com/relic-se/CircuitPython_Synthiota). Each app folder has its
 own README with the control map and copy-to-device steps.
