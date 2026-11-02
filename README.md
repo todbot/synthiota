@@ -3,7 +3,7 @@
 
 Pico/Pico2-based board for playing with synthesizers in CircuitPython.
 
-https://github.com/user-attachments/assets/1fe45b23-2a2a-41f4-9afe-203840c703e8
+https://github.com/user-attachments/assets/3d1baa3f-af72-41ba-9afe-a45eea070c66
 
 
 <img src="./docs/synthiota1_proto_case_render1.jpg" width=250><img src="./docs/synthiota1_case_idea_render1.jpg" width=250>
@@ -200,4 +200,9 @@ Or `picotool reboot` to reset board.
 
 
 (note most product links are Amazon affiliate links)
+
+
+https://github.com/user-attachments/assets/1fe45b23-2a2a-41f4-9afe-203840c703e8
+
+
 
