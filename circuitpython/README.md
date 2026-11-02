@@ -5,19 +5,31 @@ You can use "circup" to install them with `circup install -r requirements.txt`
 
 For actual applications, see the directories.
 
-- `polysynth/`     - subtractive polysynth on synthtools' SubtractiveSynth
-- `wavesynth/`     - wavetable polysynth on synthtools' WavetableSynth
-- `swarmsynth/`    - Swarmatron-style drone on synthtools' SwarmSynth
-- `dronesynth/`    - eight drone oscillators, each tuned by its own knob
-- `dronesynth_wt/` - dronesynth with a shared wavetable
-- `tbish/`         - TB-303 inspired mono bass synth
-- `tbish2/`        - tbish on synthtools' BasslineSynth
-- `synthtest/`     - earlier synth playground
+- [`polysynth`](./polysynth) -- two-oscillator subtractive polysynth
+  (synthtools' `SubtractiveSynth`). The pads are a chromatic keyboard
+  and the pots edit 16 params over 2 pages.
+- [`wavesynth`](./wavesynth) -- wavetable polysynth (synthtools'
+  `WavetableSynth`). The pads are a scale keyboard, with chords on the
+  top row, and the pots edit 24 params over 3 pages.
+- [`swarmsynth`](./swarmsynth) -- Swarmatron-style drone (synthtools'
+  `SwarmSynth`): eight oscillators on one pitch, fanned apart by the
+  right slider.
+- [`dronesynth`](./dronesynth) -- eight drone oscillators, each tuned
+  by its own knob, each with its own LFO.
+- [`dronesynth_wt`](./dronesynth_wt) -- dronesynth with each oscillator
+  at its own place in a shared wavetable.
+- [`tbish2`](./tbish2) -- TB-303-style acid bassline (synthtools'
+  `BasslineSynth`) with a 16-step sequencer you can edit on the board.
+- [`tbish`](./tbish) -- the original TB-303-style synth, a technology
+  demo with no pattern editing or MIDI in.
+- [`hwtest`](./hwtest) -- hardware bring-up tests and the reference pin
+  setup.
+- [`synthtest`](./synthtest) -- earlier synth playground.
 
 `polysynth/` and `wavesynth/` are ported from the pico_test_synth repo.
-All but `tbish/` and `synthtest/` run on the `relic_synthiota` hardware
-library. Each app folder has its own README with the control map and
-copy-to-device steps.
+All but `tbish/`, `hwtest/` and `synthtest/` run on the `relic_synthiota`
+hardware library. Each app folder has its own README with the control
+map and copy-to-device steps.
 
 ## Building a UF2 for an app
 
