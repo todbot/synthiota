@@ -20,7 +20,8 @@ https://github.com/user-attachments/assets/1fe45b23-2a2a-41f4-9afe-203840c703e8
 
 Each app's folder has a README with its controls. To install, 
 find the corresponding UF2 in the [Releases](https://github.com/todbot/synthiota/releases) 
-section or its directory for how to install it.
+section and copy the UF2 to the board in BOOT mode. 
+Or look in the app's directory for how to install it.
 
 CircuitPython, in [`circuitpython/`](./circuitpython):
 
@@ -52,7 +53,7 @@ Arduino, in [`arduino/`](./arduino):
   synths using M16 and Mozzi.
 
 See [Getting to BOOT mode via commandline](#getting-to-boot-mode-via-commandline)
-for one way to install these.
+for another way to install these apps.
 
 # Assembling
 
