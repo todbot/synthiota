@@ -89,16 +89,22 @@ running. Boots with oscillator 1 sounding.
 - mode LED ....... lit while pitch snap is on
 - edit LED ....... lit while a held pad is steering
 - play LED ....... lit while any oscillator is in
-- screen ......... header: the loaded wavetable, and semi / free.
-                   Per oscillator: LFO mode (`.` `W` `V` `B`), the note
-                   it is tuned to, and an underline while it sounds.
-                   The status line is cutoff and the depth master, or
-                   `L4 W 18.9s D10 30%` for the LFO being steered (which
-                   of the two, its rate, its shape, its depth),
-                   `L4 18.9s D10 30/75` for the wave one plus both
-                   depths while the pair moves together, `O4 volume 80%`
-                   for an oscillator's level, or `O4 start 12.4 of 63`
-                   for where one starts in the table.
+- screen ......... header: the loaded wavetable, cutoff (`c`) and depth
+                   master (`m`) bars, and semi / free.
+                   Per oscillator, top down: a scope of the wave it is
+                   reading right now, at the height it is sounding, so
+                   a wave sweep shows as the shape morphing and a
+                   volume LFO as it breathing; where that is in the table (a tick,
+                   on a solid span when its wave LFO is sweeping); its
+                   note; its octave and LFO mode (`.` `W` `V` `B`); and
+                   its volume. The scope and volume are dithered while
+                   the oscillator is out.
+                   Holding a pad swaps the columns for what it steers:
+                   a top pad shows the LFO's rate big, its shape with a
+                   dot riding it, and both depths, dithered where the
+                   mode doesn't route them; a bottom pad shows that
+                   oscillator's volume and a big scope; both pads show
+                   where it starts in the table.
 
 The sweep always runs **up** from the start wave, whatever the shape, so
 the start is a floor and not a midpoint. A decay snaps to the top of the

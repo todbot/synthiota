@@ -86,8 +86,8 @@ WAVE_SPREAD = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
 # always clears it, so this only gates oscillators that are sitting still.
 WAVE_EPS = 0.01
 
-# Mutually non-harmonic defaults, so free LFOs never line up.
-RATES = (0.11, 0.17, 0.23, 0.31, 0.43, 0.57, 0.77, 1.03)
+# Mutually non-harmonic defaults, so free LFOs never line up: 10s to 3s a cycle
+RATES = (0.1, 0.12, 0.14, 0.17, 0.19, 0.23, 0.27, 0.32)
 RATE_MIN, RATE_MAX = 0.02, 10.0
 RATE_SPAN = math.log(RATE_MAX / RATE_MIN)
 # A click is this much of a step, interpolated across the range: 4% down
@@ -101,7 +101,8 @@ DECAY_K = 4.0  # e-foldings over that fraction, so it ends within 2% of rest
 # between them, so a coarse table would step the modulation audibly
 LFO_WAVE_SIZE = 128
 
-DEPTH_INIT = 0.3
+WAVE_DEPTH_INIT = 0.5  # of the table
+AMP_DEPTH_INIT = 0.8
 CUT_MIN = 150.0
 CUT_MAX = 6000.0  # under 0.45 * 22050, so the fallback rate is safe too
 FILT_Q = 0.9
@@ -110,6 +111,7 @@ FILT_Q = 0.9
 MODE_OFF, MODE_WAVE, MODE_VOL = 0, 1, 2
 MODE_BOTH = MODE_WAVE | MODE_VOL
 NUM_MODES = 4
+MODE_NAMES = ("OFF", "WAVE", "VOL", "BOTH")
 # lfos, shapes and lfo_bufs are all indexed in this order
 DEST_BITS = (MODE_WAVE, MODE_VOL)
 
@@ -220,8 +222,8 @@ on = [False] * NUM_OSC
 mode = [MODE_OFF] * NUM_OSC
 oct_off = [0] * NUM_OSC  # per-oscillator shift, from a held bottom pad
 wave_start = list(WAVE_SPREAD)  # fraction of the table each one starts at
-wave_range = [DEPTH_INIT] * NUM_OSC  # how far up the table its LFO sweeps
-amp_depth = [DEPTH_INIT] * NUM_OSC  # per-oscillator volume LFO depth
+wave_range = [WAVE_DEPTH_INIT] * NUM_OSC  # how far up the table its LFO sweeps
+amp_depth = [AMP_DEPTH_INIT] * NUM_OSC  # per-oscillator volume LFO depth
 level = [1.0] * NUM_OSC  # per-oscillator volume, OSC_AMP being all of it
 wave_at = [-1.0] * NUM_OSC  # wave each buffer was last filled with
 mod_scale = 1.0  # the right slider, over all sixteen depths at once
@@ -637,35 +639,56 @@ def update_leds():
 def rate_text(r):
     """Hz once it is fast, seconds a cycle below that: a 30s swell reads
     as 0.03Hz either way you nudge it."""
+    if r >= 9.95:  # five characters is all the focus panel's big text has
+        return "%dHz" % round(r)
     return "%.1fHz" % r if r >= 1.0 else "%.1fs" % (1.0 / r)
 
 
+def sweep_span(i):
+    """The stretch of the table oscillator i's wave LFO sweeps, as
+    fractions of it, or None while that LFO is routed elsewhere."""
+    if not mode[i] & MODE_WAVE:
+        return None
+    return wave_start[i], min(wave_start[i] + wave_range[i] * mod_scale, 1.0)
+
+
+def gain(i):
+    """How loud oscillator i is right now, as a fraction of OSC_AMP."""
+    return (amp_lfos[i].value if mode[i] & MODE_VOL else OSC_AMP * level[i]) / OSC_AMP
+
+
 def update_ui():
-    ui.set_header(TABLE_NAMES[table_i], "semi" if quantize else "free")
-    for i in range(NUM_OSC):
-        ui.set_osc(i, pitch[i], mode[i], on[i])
+    ui.set_header(TABLE_NAMES[table_i], "semi" if quantize else "free",
+                  cut_pos, mod_scale)
+    # focus first: leaving it clears the columns, which set_osc then redraws
     both, lfo_steer, osc_steer = steers()
     if both is not None:
-        ui.set_status("O%d start %.1f of %d"
-                      % (both + 1, wave_start[both] * top_wave, top_wave))
+        i = both
+        ui.focus_osc(i, "OSC %d  START" % (i + 1),
+                     "%.1f" % (wave_start[i] * top_wave), "of %d" % top_wave,
+                     wave_bufs[i], wave_at[i], gain(i),
+                     strip=(wave_at[i] / top_wave, wave_start[i], sweep_span(i)))
     elif lfo_steer is not None:
         i = lfo_steer
         d = primary(i)
-        rt = rate_text(lfos[d][i].rate)
-        sh = LFO_WAVES[shapes[d][i]]
-        if mode[i] in (MODE_OFF, MODE_BOTH):  # one encoder click moves both
-            ui.set_status("L%d %s %s %d/%d" % (i + 1, rt, sh,
-                                               round(100 * wave_range[i]),
-                                               round(100 * amp_depth[i])))
-        else:
-            ui.set_status("L%d %s %s %s %d%%"
-                          % (i + 1, "WV"[d], rt, sh,
-                             round(100 * (wave_range[i] if d == 0 else amp_depth[i]))))
+        m = mode[i] or MODE_BOTH  # what routed() steers
+        lfo = lfos[d][i]
+        # .phase runs from -phase_offset; the waveform is read offset from it
+        at = (lfo.phase + lfo.phase_offset) % 1.0
+        ui.focus_lfo(i, "LFO %d  %s  %s" % (i + 1, MODE_NAMES[mode[i]],
+                                            LFO_WAVES[shapes[d][i]]),
+                     rate_text(lfo.rate), lfo_bufs[d][i], at,
+                     (("W", wave_range[i], bool(m & MODE_WAVE)),
+                      ("V", amp_depth[i], bool(m & MODE_VOL))))
     elif osc_steer is not None:
-        ui.set_status("O%d volume %d%%"
-                      % (osc_steer + 1, round(100 * level[osc_steer])))
+        i = osc_steer
+        ui.focus_osc(i, "OSC %d  VOLUME" % (i + 1), "%d%%" % round(100 * level[i]),
+                     "", wave_bufs[i], wave_at[i], gain(i), level=level[i])
     else:
-        ui.set_status("cut %4d  mod %.2f" % (cut_blk.a, mod_scale))
+        ui.focus_off()
+    for i in range(NUM_OSC):
+        ui.set_osc(i, pitch[i], mode[i], on[i], level[i], gain(i), wave_bufs[i],
+                   wave_at[i], wave_at[i] / top_wave, sweep_span(i))
 
 
 for _i, _v in enumerate(s.pots):  # relic primes the ADCs, so these are good now
