@@ -13,6 +13,8 @@ The sequencing is synthtools' `StepSequencer`, one per track, all driven from
 a shared clock. The screen borrows the look of
 [monobit](https://github.com/DatanoiseTV/monobit).
 
+![stepseq8 controls](../../docs/controls/stepseq8.png)
+
 ## Controls
 
 | action | control |
