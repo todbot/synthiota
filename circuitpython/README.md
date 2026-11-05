@@ -18,6 +18,8 @@ For actual applications, see the directories.
   by its own knob, each with its own LFO.
 - [`dronesynth_wt`](./dronesynth_wt) -- dronesynth with each oscillator
   at its own place in a shared wavetable.
+- [`stepseq8`](./stepseq8) -- 8-track MIDI step sequencer in the manner of
+  picostepseq, with tracks up to 32 steps long. Makes no sound itself.
 - [`tbish2`](./tbish2) -- TB-303-style acid bassline (synthtools'
   `BasslineSynth`) with a 16-step sequencer you can edit on the board.
 - [`tbish`](./tbish) -- the original TB-303-style synth, a technology
