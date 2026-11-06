@@ -38,6 +38,7 @@ POT_LABEL_Y, POT_BAR_Y, POT_BAR_H = 46, 55, 9
 
 ALL_DY, ALL_MUTE_X, ALL_X, ALL_DX, ALL_CHAN_X = 8, 8, 14, 3, 113
 MINI_H = 5
+MARKER_STEPS = 4  # the all-tracks view marks the first of every this many
 
 TOAST_Y, TOAST_H = 52, 11
 TOAST_MS = 1500
@@ -248,17 +249,19 @@ class SeqUI(displayio.Group):
 
     # --- all-tracks view ---------------------------------------------------
 
-    def _mini_cell(self, i, x, y, state):
+    def _mini_cell(self, i, x, y, state, marked):
+        """A marked step reaches one pixel lower, and its dot is taller too."""
         if self._cells[i] == state:
             return
         self._cells[i] = state
-        self._fill(x, y, ALL_DX - 1, MINI_H, 0)
+        extra = 1 if marked else 0
+        self._fill(x, y, ALL_DX - 1, MINI_H + 1, 0)
         if state == CELL_HEAD_ON:
-            self._fill(x, y, ALL_DX - 1, MINI_H)
+            self._fill(x, y, ALL_DX - 1, MINI_H + extra)
         elif state == CELL_ON:
-            self._fill(x, y + 2, ALL_DX - 1, MINI_H - 2)
+            self._fill(x, y + 2, ALL_DX - 1, MINI_H - 2 + extra)
         elif state == CELL_OFF:
-            self._fill(x, y + MINI_H - 1, 1, 1)
+            self._fill(x, y + MINI_H - 1 - extra, 1, 1 + 2 * extra)
 
     def draw_all(self, tracks, selected):
         """A row per track: number, M if muted, its steps, its MIDI channel."""
@@ -287,7 +290,8 @@ class SeqUI(displayio.Group):
                     state = CELL_HEAD_ON
                 else:
                     state = CELL_ON if steps[i][3] else CELL_OFF
-                self._mini_cell(r * MAX_STEPS + i, ALL_X + i * ALL_DX, y + 1, state)
+                self._mini_cell(r * MAX_STEPS + i, ALL_X + i * ALL_DX, y + 1, state,
+                                i % MARKER_STEPS == 0)
 
     def _set_view(self, view):
         if view != self.view:

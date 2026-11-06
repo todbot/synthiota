@@ -67,7 +67,24 @@ is the value, solid while you're turning it, and the tick is where the pot
 physically is. The pot you're turning shows in the title, as `LEN 16`.
 
 All-tracks view has a row per track: its number, `M` if muted, its steps and
-its MIDI channel. It has no tempo or pot display.
+its MIDI channel. Every fourth step is marked by reaching a little lower. It
+has no tempo or pot display.
+
+### Example screens
+
+![stepseq8 example screens](../../docs/screens/screens.png)
+
+The whole board, playing, then in the all-tracks view with tracks 5 and 7
+muted:
+
+![stepseq8 playing](../../docs/screens/track_playing_board.png)
+
+![stepseq8 all-tracks view](../../docs/screens/all_tracks_board.png)
+
+These come from running this code against a fake board, not from photos, so
+the display and LEDs are from the same moment. LED brightness is lifted to
+show up in a picture, the real ones are dimmer. To remake them, run
+`python3 docs/screens/make_screens.py`.
 
 ## MIDI clock
 
@@ -79,9 +96,12 @@ without clock, it goes back to its own tempo.
 ## Saving
 
 Pausing writes everything to `/stepseq8.dat`, at most once every 20 secs:
-the track you were working on, plus all 8 patterns. Saving to a pattern
-while playing only takes effect on disk at the next pause, so pause before
-powering off.
+the track you were working on, plus all 8 patterns. `SAVED` shows when it
+does. Nothing shows if there was nothing new to write, or if it's too soon.
+In that case, it shows when the 20 secs are up, if you're still paused.
+
+Saving to a pattern while playing only takes effect on disk at the next
+pause, so pause before powering off.
 
 `boot.py` makes the drive writable from the board's side, so it must run:
 reset the board after copying it. Don't save files to the drive from your

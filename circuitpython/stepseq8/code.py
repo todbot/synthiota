@@ -72,7 +72,7 @@ TRACK_DIMS = tuple((c >> 3) & 0x1F1F1F for c in TRACK_COLORS)
 s = relic_synthiota.Synthiota(channel_count=1)  # audio's unused, keep it small
 s.display.auto_refresh = False
 s.leds.auto_write = False
-s.leds.brightness = 0.3
+s.leds.brightness = 0.2
 
 out_msg = tmidi.Message()
 
@@ -435,6 +435,7 @@ def maybe_save(now):
     last_save = now
     try:
         eng.write_file(SAVE_FILE)
+        ui.toast("SAVED", ticks_ms())  # the write blocks, don't count it against the toast
     except OSError:
         eng.dirty = False  # only ask once
         ui.toast("NOT SAVED", now)
