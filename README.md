@@ -10,6 +10,8 @@ https://github.com/user-attachments/assets/3d1baa3f-af72-41ba-9afe-a45eea070c66
 
 <img src="./docs/synthiota1_pcb_render1.jpg" width=500>
 
+[![Find todbot synth toys on SmallRun](https://smallrun.net/brand/badge.png?style=i-sell-on)](https://smallrun.net/shop/todbot)
+
 ## Video demos:
 
 - "tbish" TB-303 like synth, demo2: https://youtu.be/MjE2wdevc3M
@@ -37,6 +39,9 @@ CircuitPython, in [`circuitpython/`](./circuitpython):
   each tuned by its own knob, each with its own LFO.
 - [`dronesynth_wt`](./circuitpython/dronesynth_wt) -- dronesynth with
   each oscillator at its own place in a shared wavetable.
+- [`stepseq8`](./circuitpython/stepseq8) -- 8-track MIDI step sequencer
+  in the manner of picostepseq, with tracks up to 32 steps long. Makes
+  no sound itself.
 - [`tbish2`](./circuitpython/tbish2) -- TB-303-style acid bassline with
   a 16-step sequencer you can edit on the board.
 - [`tbish`](./circuitpython/tbish) -- the original TB-303-style synth,
